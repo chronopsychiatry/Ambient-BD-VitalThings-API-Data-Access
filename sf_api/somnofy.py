@@ -34,7 +34,7 @@ def make_sessions_params(offset=0, limit=50, from_date=date_start, to_date=date_
     }
 
 
-def get_all_sessions_for_user(user_id, auth):
+def get_all_sessions_for_user(user_id, auth, from_date=date_start, to_date=date_end):
     headers = {
         'Accept': 'application/json'
     }
@@ -44,7 +44,7 @@ def get_all_sessions_for_user(user_id, auth):
     while are_more:
 
 
-        params = make_sessions_params(offset)
+        params = make_sessions_params(offset, from_date=from_date, to_date=to_date)
         params['user_id'] = user_id
         r = requests.get(sessions_url, params=params, headers=headers, auth=auth)
 

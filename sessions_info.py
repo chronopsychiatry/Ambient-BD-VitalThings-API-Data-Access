@@ -26,11 +26,25 @@ def calculate_aggregated_sessions_stats(groups: dict) -> dict:
         total_duration = sum(session.duration_seconds for session in sessions)
         num_sessions = len(sessions)
         max_duration = max(session.duration_seconds for session in sessions)
-
+        device_serial_number = sessions[0].device_serial_number
+        user_id = sessions[0].user_id
 
         aggregated_values[end_date] = {
             'total_duration': total_duration,
             'num_sessions': num_sessions,
             'max_duration': max_duration,
+            'device_serial_number': device_serial_number,
+            'user_id': user_id
         }
     return aggregated_values
+
+def mark_valid_nights(per_date: dict) -> dict:
+    """
+    Mark days with valid number of sessions
+    :param per_date: dictionary with end date as key and aggregated stats as value
+    :return: dictionary with end date as key and aggregated stats as value with valid field
+    """
+    for date, stats in per_date.items():
+        stats['valid'] = stats['max_duration'] > 3*3600
+    return per_date
+
