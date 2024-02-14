@@ -65,34 +65,86 @@ if __name__ == '__main__':
     for u in users:
         print(u)
 
-    sessions = get_all_sessions_for_user('65367bfb2b751b0013e9bebf', basic)
-    groups = group_sessions_by_enddate(sessions)
-    per_date = calculate_aggregated_sessions_stats(groups)
-    for k,v in per_date.items():
-        print(k,v)
-
-    v = per_date[ datetime.datetime.fromisoformat('2023-11-21T00:00:00').date()]
-    print(v)
-
-
+    user_id = '64d22532c58c030014afb890'
 
     # make date from string    '2023-08-01T00:00:00Z'
-    start_date = datetime.datetime.fromisoformat('2023-11-17T00:00:00').date()
-    end_date = datetime.datetime.fromisoformat('2023-11-21T00:00:00').date()
+    #start_date = datetime.datetime.fromisoformat('2024-02-12T00:00:00').date()
+    #end_date = datetime.datetime.fromisoformat('2024-02-12T00:00:00').date()
+    start_date = '2024-02-12T00:00:00'
+    end_date = '2024-02-13T00:00:00'
 
-    u = User({'id': '65367bfb2b751b0013e9bebf', 'created_at': '2023-08-01T00:00:00Z'})
-    per_date = get_user_nights(basic, u, start_date, end_date)
-    print(per_date)
-    for k,v in per_date.items():
-        print(k,v)
+    sessions = get_all_sessions_for_user(user_id, basic, start_date, end_date)
 
-    #v = per_date[ datetime.datetime.fromisoformat('2023-11-21T00:00:00').date()]
-    #print(v)
+    for s in sessions:
+        print("{} {}".format(s.session_id, s.duration_seconds))
 
-    usage_table = calculate_compliance(basic, users, from_date=start_date, to_date=end_date)
+    for x in range(0,1):
+        s = sessions[4]
+        print(s)
 
-    usage_table.to_csv('session_data.csv', index=False)
-    print(usage_table)
+        outputs = [
+            'environment',
+            'vitalsigns',
+            'sleep_analysis.report',
+            'sleep_analysis.hypnogram',
+            'sleep_analysis.meta',
+            'sleep_analysis.epoch_data'
+
+        ]
+        params = {
+
+                  'limit' : 2,
+                    'user_id': user_id,
+                    'from': '2024-02-12T00:00:00',
+                    'to': '2024-02-13T00:00:00', #outputs[0], outputs[1],
+                  'embed': [outputs[3], outputs[5]
+                 ]}
+
+        url = "https://partner.api.somnofy.com/v1/sessions/" + s.session_id
+        print(url)
+
+        r = requests.get(url,params=params, headers=headers, auth=basic)
+
+        #print(json.dumps(r.json(), indent=2))
+
+        print(
+            r.json()['_embedded']['sleep_analysis'].keys()
+        )
+
+        print(
+            r.json()['_embedded']['sleep_analysis']['epoch_data'].keys()
+        )
+        print(len(r.json()['_embedded']['sleep_analysis']['epoch_data']))
+        df = pd.DataFrame(r.json()['_embedded']['sleep_analysis']['epoch_data'])
+
+        print(
+            r.json()['_embedded']['sleep_analysis']['hypnogram'].keys()
+        )
+        df = pd.DataFrame(r.json()['_embedded']['sleep_analysis']['hypnogram'])
+        #print(df)
+        df.to_csv('session_data.csv', index=False)
+
+    # groups = group_sessions_by_enddate(sessions)
+    # per_date = calculate_aggregated_sessions_stats(groups)
+    # for k,v in per_date.items():
+    #     print(k,v)
+    #
+    # v = per_date[ datetime.datetime.fromisoformat('2023-11-21T00:00:00').date()]
+    # print(v)
+    #
+    #
+    # u = User({'id': '65367bfb2b751b0013e9bebf', 'created_at': '2023-08-01T00:00:00Z'})
+    # per_date = get_user_nights(basic, u, start_date, end_date)
+    # print(per_date)
+    # for k,v in per_date.items():
+    #     print(k,v)
+
+
+    ## making usage table
+    # usage_table = calculate_compliance(basic, users, from_date=start_date, to_date=end_date)
+    #
+    # # usage_table.to_csv('session_data.csv', index=False)
+    # print(usage_table)
 
 
 
