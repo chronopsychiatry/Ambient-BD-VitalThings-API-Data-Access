@@ -117,7 +117,7 @@ if __name__ == '__main__':
         print(len(r.json()['_embedded']['sleep_analysis']['epoch_data']))
         df = pd.DataFrame(r.json()['_embedded']['sleep_analysis']['epoch_data'])
 
-        print(
+        print( 
             r.json()['_embedded']['sleep_analysis']['hypnogram'].keys()
         )
         df = pd.DataFrame(r.json()['_embedded']['sleep_analysis']['hypnogram'])
