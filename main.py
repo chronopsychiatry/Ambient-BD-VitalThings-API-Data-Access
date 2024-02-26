@@ -1,4 +1,5 @@
 # This is a sample Python script.
+import pickle
 
 # Press Shift+F10 to execute it or replace it with your code.
 # Press Double Shift to search everywhere for classes, files, tool windows, actions, and settings.
@@ -9,10 +10,12 @@ import pandas as pd
 import datetime
 
 from compliance import calculate_compliance, get_user_nights
+from data_download import set_out_dir, download_user_data
 from local_auth import get_auth
-from sessions_info import calculate_aggregated_sessions_stats, group_sessions_by_enddate, mark_valid_nights
+from sessions_info import calculate_aggregated_sessions_stats, group_sessions_by_enddate, mark_valid_nights, \
+    make_data_frame_from_session
 from sf_api.dom import User
-from sf_api.somnofy import get_users, get_all_sessions_for_user
+from sf_api.somnofy import *
 
 
 def print_hi(name):
@@ -65,64 +68,72 @@ if __name__ == '__main__':
     for u in users:
         print(u)
 
-    user_id = '64d22532c58c030014afb890'
+    # lorna
+    #user_id = '64d22532c58c030014afb890'
+
+    # tomek
+    user_id = '65367bfb2b751b0013e9bebf'
 
     # make date from string    '2023-08-01T00:00:00Z'
     #start_date = datetime.datetime.fromisoformat('2024-02-12T00:00:00').date()
     #end_date = datetime.datetime.fromisoformat('2024-02-12T00:00:00').date()
-    start_date = '2024-02-12T00:00:00'
-    end_date = '2024-02-13T00:00:00'
+    #start_date = '2024-02-18T00:00:00'
+    #end_date = '2024-02-25T00:00:00'
 
+    set_out_dir('../data')
+
+    out = download_user_data(user_id, basic, filter_shorter_than_hours=2)
+    print(f'Data saved in {out}')
+
+'''
+    
     sessions = get_all_sessions_for_user(user_id, basic, start_date, end_date)
 
     for s in sessions:
-        print("{} {}".format(s.session_id, s.duration_seconds))
+        if s.duration_seconds:
+            print("{} {} {}".format(s.session_id, s.start_time.isoformat(), s.duration_seconds / 3600))
+        else:
+            print("{} {} {}".format(s.session_id, s.start_time.isoformat(), "in progress"))
 
-    for x in range(0,1):
-        s = sessions[4]
-        print(s)
 
-        outputs = [
-            'environment',
-            'vitalsigns',
-            'sleep_analysis.report',
-            'sleep_analysis.hypnogram',
-            'sleep_analysis.meta',
-            'sleep_analysis.epoch_data'
+    for s in sessions:
+        #if not s.duration_seconds or s.duration_seconds < 30*60 or s.duration_seconds > 3*60*60:
+        if not s.duration_seconds or s.duration_seconds < 5 *60 * 60:
+            continue    # skip short sessions
+'''
 
-        ]
-        params = {
 
-                  'limit' : 2,
-                    'user_id': user_id,
-                    'from': '2024-02-12T00:00:00',
-                    'to': '2024-02-13T00:00:00', #outputs[0], outputs[1],
-                  'embed': [outputs[3], outputs[5]
-                 ]}
 
-        url = "https://partner.api.somnofy.com/v1/sessions/" + s.session_id
-        print(url)
 
-        r = requests.get(url,params=params, headers=headers, auth=basic)
 
-        #print(json.dumps(r.json(), indent=2))
+# print(s_json)
+# print(s_json['_embedded']['sleep_analysis'].keys())
 
-        print(
-            r.json()['_embedded']['sleep_analysis'].keys()
-        )
+# print(
+#     r.json()['_embedded']['sleep_analysis'].keys()
+# )
 
-        print(
-            r.json()['_embedded']['sleep_analysis']['epoch_data'].keys()
-        )
-        print(len(r.json()['_embedded']['sleep_analysis']['epoch_data']))
-        df = pd.DataFrame(r.json()['_embedded']['sleep_analysis']['epoch_data'])
+# print(
+#     r.json()['_embedded']['sleep_analysis']['epoch_data'].keys()
+# )
+# print(len(r.json()['_embedded']['sleep_analysis']['epoch_data']))
+# df = pd.DataFrame(r.json()['_embedded']['sleep_analysis']['epoch_data'])
+# df.to_csv('session_epoch_data.csv', index=False)
 
-        print( 
-            r.json()['_embedded']['sleep_analysis']['hypnogram'].keys()
-        )
-        df = pd.DataFrame(r.json()['_embedded']['sleep_analysis']['hypnogram'])
-        #print(df)
-        df.to_csv('session_data.csv', index=False)
+# #with open('session_epoch_data.pkl', 'wb') as f:
+# #    pickle.dump(df, f)
+
+# print(
+#     r.json()['_embedded']['sleep_analysis']['hypnogram'].keys()
+# )
+# df = pd.DataFrame(r.json()['_embedded']['sleep_analysis']['hypnogram'])
+# #print(df)
+# df.to_csv('session_hypnogram.csv', index=False)
+
+# print(
+#     r.json()['_embedded']['sleep_analysis']['report'].keys()
+# )
+
 
     # groups = group_sessions_by_enddate(sessions)
     # per_date = calculate_aggregated_sessions_stats(groups)

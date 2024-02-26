@@ -1,7 +1,10 @@
+import unittest
 from datetime import datetime
 from unittest import TestCase
 
-from sessions_info import group_sessions_by_enddate, calculate_aggregated_sessions_stats
+import pandas as pd
+
+from sessions_info import group_sessions_by_enddate, calculate_aggregated_sessions_stats, make_data_frame_from_session
 from sf_api.dom import Session, date_from_iso_string
 
 test_sessions = [
@@ -76,3 +79,29 @@ class Test(TestCase):
         }
 
         self.assertEqual(result, expected_result)
+
+    def test_make_data_frame_from_session(self):
+        # Create a mock session JSON object
+        session_json = {
+            '_embedded': {
+                'sleep_analysis': {
+                    'epoch_data': [{'movement_mean': 7.17,'time_offset': 0}],
+                    'hypnogram': [{'sleep_stage':4,  'timestamp': '2024-02-20T00:01:16.990000'}]
+                }
+            }
+        }
+
+        # Call the function with the mock object
+        df = make_data_frame_from_session(session_json)
+
+        # Assert that the returned DataFrame has the expected structure
+        expected_df = pd.DataFrame({
+            'timestamp': ['2024-02-20T00:01:16.990000'],
+            'sleep_stage': [4],
+            'movement_mean': [7.17],
+            'time_offset': [0]
+        })
+        pd.testing.assert_frame_equal(df, expected_df)
+
+if __name__ == '__main__':
+    unittest.main()
