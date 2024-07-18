@@ -68,11 +68,14 @@ if __name__ == '__main__':
     for u in users:
         print(u)
 
+    
+
+
     # lorna
-    #user_id = '64d22532c58c030014afb890'
+    user_id = '64d22532c58c030014afb890'
 
     # tomek
-    user_id = '65367bfb2b751b0013e9bebf'
+    #user_id = '65367bfb2b751b0013e9bebf'
 
     # make date from string    '2023-08-01T00:00:00Z'
     #start_date = datetime.datetime.fromisoformat('2024-02-12T00:00:00').date()
