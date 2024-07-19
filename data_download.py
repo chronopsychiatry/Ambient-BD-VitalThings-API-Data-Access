@@ -8,24 +8,23 @@ import pandas as pd
 import logging
 
 from paths_resolver import PathsResolver
-from sf_api.somnofy import get_all_sessions_for_user, get_session_json, get_session_report
-
-
-
-
+from sf_api.somnofy import Somnofy
 
 
 class DataDownloader:
-    def __init__(self, resolver = PathsResolver()):
+    def __init__(self, somnofy: Somnofy, resolver = PathsResolver()):
+        if not somnofy:
+            raise ValueError('Somnofy connection must be provided')
+        self.somnofy = somnofy
         self.resolver = resolver
         self.logger = logging.getLogger(__name__)
         self.filter_shorter_than_hours = 2
 
-    def save_user_data(self, auth, user_id, start_date = None):
+    def save_user_data(self, user_id, start_date = None):
 
         start_date = start_date or self.get_date_from_last_session(user_id)
 
-        sessions = get_all_sessions_for_user(user_id, auth, start_date)
+        sessions = self.somnofy.get_all_sessions_for_user(user_id, start_date)
         # print(f'Found {len(sessions)} sessions for user {user_id} between {start_date} and now')
 
         if len(sessions) == 0:
@@ -44,7 +43,7 @@ class DataDownloader:
 
             self.logger.info(f'Downloading session {s.session_id} for user {user_id}')
 
-            s_json = get_session_json(s.session_id, user_id, auth)
+            s_json = self.somnofy.get_session_json(s.session_id, user_id)
             self.save_raw_session_data(s_json, user_id, s.session_id)
 
             reports = pd.concat([reports, self.make_session_report(s_json)], ignore_index=True)

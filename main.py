@@ -47,6 +47,8 @@ if __name__ == '__main__':
 
     auth = get_auth(1)
     print("Accessing somnofy with user: {}".format(auth.username))
+    somnofy = Somnofy(auth)
+
     #r = requests.get('https://partner.api.somnofy.com/v1/users', params={}, headers=headers, auth=basic)
     #print(json.dumps(r.json(), indent=2))
 
@@ -69,14 +71,14 @@ if __name__ == '__main__':
     from_date = (datetime.datetime.now() - datetime.timedelta(days=30)).isoformat()
 
 
-    users = get_users(auth)
+    users = somnofy.get_users()
     for u in users:
         print(u)
 
-    downloader = DataDownloader()
+    downloader = DataDownloader(somnofy)
 
     for u in users:
-        downloader.save_user_data(auth,u.id, from_date)
+        downloader.save_user_data(u.id, from_date)
 
 '''
     # lorna

@@ -4,13 +4,13 @@ from pandas import DataFrame, pandas
 
 from sessions_info import *
 from sf_api.dom import User
-from sf_api.somnofy import get_all_sessions_for_user
+from sf_api.somnofy import Somnofy
 
 
-def get_user_nights(auth, user: User, from_date: datetime.date, to_date: datetime.date) -> dict:
+def get_user_nights(somnofy: Somnofy, user: User, from_date: datetime.date, to_date: datetime.date) -> dict:
 
     to_date += datetime.timedelta(days=1) # add one day to the to_date to include the last day
-    sessions = get_all_sessions_for_user(user.id, auth, from_date=from_date.isoformat(), to_date=to_date.isoformat())
+    sessions = somnofy.get_all_sessions_for_user(user.id, from_date=from_date.isoformat(), to_date=to_date.isoformat())
     sessions = [s for s in sessions if s.state != 'IN_PROGRESS']
 
     groups = group_sessions_by_enddate(sessions)
