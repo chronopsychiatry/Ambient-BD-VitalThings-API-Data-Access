@@ -11,11 +11,8 @@ import datetime
 import logging
 
 from compliance import calculate_compliance, get_user_nights
-from data_download import set_out_dir, download_user_data, DataDownloader
+from data_download import DataDownloader
 from local_auth import get_auth
-from sessions_info import calculate_aggregated_sessions_stats, group_sessions_by_enddate, mark_valid_nights, \
-    make_epoch_data_frame_from_session
-from sf_api.dom import User
 from sf_api.somnofy import *
 
 
@@ -79,7 +76,7 @@ if __name__ == '__main__':
     downloader = DataDownloader()
 
     for u in users:
-        downloader.download_user_data(auth,u.id, from_date)
+        downloader.save_user_data(auth,u.id, from_date)
 
 '''
     # lorna

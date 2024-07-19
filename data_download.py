@@ -4,13 +4,12 @@ import os
 from typing import Union
 
 import pandas as pd
+
 import logging
 
 from paths_resolver import PathsResolver
-from sessions_info import make_epoch_data_frame_from_session
 from sf_api.somnofy import get_all_sessions_for_user, get_session_json, get_session_report
 
-out_dir = './data'
 
 
 
@@ -20,8 +19,9 @@ class DataDownloader:
     def __init__(self, resolver = PathsResolver()):
         self.resolver = resolver
         self.logger = logging.getLogger(__name__)
+        self.filter_shorter_than_hours = 2
 
-    def download_user_data(self, auth, user_id, start_date = None):
+    def save_user_data(self, auth, user_id, start_date = None):
 
         start_date = start_date or self.get_date_from_last_session(user_id)
 
@@ -32,40 +32,47 @@ class DataDownloader:
             self.logger.info(f'No sessions found for user {user_id} between {start_date} and now')
             return None
 
-
         reports = pd.DataFrame()
+        epoch_data = pd.DataFrame()
 
         last_session = None
+        last_session_json = None
 
         for s in sessions:
-            if s.state == 'IN_PROGRESS':
-                self.logger.debug(f'Skipping session {s.session_id} for user {user_id} as it is in progress')
+            if self.is_in_progress(s, user_id):
                 continue
-                
+
             self.logger.info(f'Downloading session {s.session_id} for user {user_id}')
 
             s_json = get_session_json(s.session_id, user_id, auth)
             self.save_raw_session_data(s_json, user_id, s.session_id)
 
-            #df = make_epoch_data_frame_from_session(s_json)
-            #path = os.path.join(user_dir, f'{s.session_id}_session_data.csv')
-            #df.to_csv(path, index=False)
+            reports = pd.concat([reports, self.make_session_report(s_json)], ignore_index=True)
 
-            #df = pd.DataFrame(s_json['_embedded']['sleep_analysis']['report'], index=[0])
-            # add as first column the session_id
-            #df.insert(0, 'session_id', s.session_id)
-            #reports = pd.concat([reports, df], ignore_index=True)
+            if self.should_store_epoch_data(s):
+                epoch_data = pd.concat([epoch_data, self.make_epoch_data_frame_from_session(s_json)], ignore_index=True)
 
-            last_session = s_json
+            last_session = s
+            last_session_json = s_json
 
-        if last_session:
-            last_session['_embedded'] = []
-            with open(self.resolver.get_user_last_session(user_id), 'w') as f:
-                json.dump(last_session, f)
+        self.save_reports(reports, user_id, sessions,last_session)
+        self.save_epoch_data(epoch_data, user_id, sessions,last_session)
+        self.save_last_session(last_session_json, user_id)
 
-        #path = os.path.join(user_dir, 'sessions_reports.csv')
-        #reports.to_csv(path, index=False)
-        #return user_dir
+
+    def should_store_epoch_data(self, session):
+        return not self.filter_shorter_than_hours or not session.duration_seconds or session.duration_seconds > self.filter_shorter_than_hours * 60 * 60
+
+    def make_session_report(self, s_json):
+        df = pd.DataFrame(s_json['_embedded']['sleep_analysis']['report'], index=[0])
+        df.insert(0, 'session_id', s_json['session_id'])
+        return df
+
+    def is_in_progress(self, session, user_id):
+        if session.state == 'IN_PROGRESS':
+            self.logger.debug(f'Skipping session {session.session_id} for user {user_id} as it is in progress')
+            return True
+        return False
 
     def get_date_from_last_session(self, user_id):
         session_file = self.resolver.get_user_last_session(user_id)
@@ -84,7 +91,68 @@ class DataDownloader:
         with open(path, 'w') as f:
             json.dump(s_json, f)
 
+    def save_last_session(self, last_session_json, user_id):
+        if last_session_json:
+            last_session_json['_embedded'] = []
+            path = self.resolver.get_user_last_session(user_id)
+            with open(path, 'w') as f:
+                json.dump(last_session_json, f)
 
+    def save_reports(self, reports, user_id, sessions, last_session):
+        if len(sessions) == 0:
+            return
+        if not last_session:
+            return
+
+        dates = self.sessions_to_date_range(sessions[0], last_session)
+
+        file_name = f'{dates[0]}_{dates[1]}_sessions_reports.csv'
+        user_dir = self.resolver.get_user_data_dir(user_id)
+        path = os.path.join(user_dir, file_name)
+        reports.to_csv(path, index=False)
+
+    def sessions_to_date_range(self, first_session, last_session):
+        start_date = first_session.start_time.date()
+        end_date = last_session.end_time.date()
+        return start_date, end_date
+
+    def save_epoch_data(self, epoch_data, user_id, sessions, last_session):
+        if len(sessions) == 0:
+            return
+        if not last_session:
+            return
+
+        dates = self.sessions_to_date_range(sessions[0], last_session)
+
+        file_name = f'{dates[0]}_{dates[1]}_epoch_data.csv'
+        user_dir = self.resolver.get_user_data_dir(user_id)
+        path = os.path.join(user_dir, file_name)
+        epoch_data.to_csv(path, index=False)
+
+    def make_epoch_data_frame_from_session(self,session_json: dict) -> pd.DataFrame:
+        """
+        Make a DataFrame from a session
+        :param session_json: json data for session
+        :return: DataFrame with session data
+        """
+        epoch_data = pd.DataFrame(session_json['_embedded']['sleep_analysis']['epoch_data'])
+        epoch_hypnogram = pd.DataFrame(session_json['_embedded']['sleep_analysis']['hypnogram'])
+
+        # check if both has same number of rows, throw exception when not met with actual numbers
+        if len(epoch_data) != len(epoch_hypnogram):
+            raise Exception(
+                f"Epoch data and hypnogram data have different number of rows: {len(epoch_data)} vs {len(epoch_hypnogram)}")
+
+        session_data = pd.concat([epoch_hypnogram, epoch_data], axis=1)
+
+        # add session_id as first column
+        session_data.insert(0, 'session_id', session_json['session_id'])
+
+        # change the order of columns that first is 'timestamp' and then rest remains same
+        session_data = session_data[['timestamp'] + [col for col in session_data.columns if col != 'timestamp']]
+        return session_data
+
+'''
 def set_out_dir(path):
     global out_dir
 
@@ -135,3 +203,4 @@ def download_user_data(user_id, auth,
     reports.to_csv(path, index=False)
     return user_dir
 
+'''

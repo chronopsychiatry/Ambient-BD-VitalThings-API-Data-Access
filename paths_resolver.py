@@ -3,7 +3,7 @@ import os
 
 class PathsResolver:
 
-    def __init__(self, path = './downloaded_data'):
+    def __init__(self, path = os.path.join('.','downloaded_data')):
 
         self.main_dir = path
 
