@@ -56,6 +56,7 @@ class DataDownloader:
             last_session_json = s_json
 
         self.save_reports(reports, user_id, sessions,last_session)
+        self.append_to_global_reports(reports, user_id)
         self.save_epoch_data(epoch_data, user_id, sessions,last_session)
         self.save_last_session(last_session_json, user_id)
 
@@ -151,6 +152,11 @@ class DataDownloader:
         # change the order of columns that first is 'timestamp' and then rest remains same
         session_data = session_data[['timestamp'] + [col for col in session_data.columns if col != 'timestamp']]
         return session_data
+
+    def append_to_global_reports(self, reports, user_id):
+        file = self.resolver.get_user_global_report(user_id)
+        reports.to_csv(file, mode='a', header=not os.path.exists(file), index=False)
+
 
 '''
 def set_out_dir(path):

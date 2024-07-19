@@ -44,3 +44,6 @@ class PathsResolver:
 
     def get_user_last_session(self, user_id):
         return os.path.join(self.get_user_sys_dir(user_id), 'last_session.json')
+
+    def get_user_global_report(self, user_id):
+        return os.path.join(self.get_user_data_dir(user_id), 'all_sessions_report.csv')
