@@ -6,14 +6,15 @@ from paths_resolver import PathsResolver
 
 class TestPathsResolver(unittest.TestCase):
     def setUp(self):
-        self.test_dir = tempfile.TemporaryDirectory()
-        self.resolver = PathsResolver(self.test_dir.name)
+        self.temp_dir = tempfile.TemporaryDirectory()
+        self.test_dir = self.temp_dir.name
+        self.resolver = PathsResolver(self.test_dir)
 
     def test_initialization(self):
-        self.assertEqual(self.resolver.main_dir, self.test_dir.name)
+        self.assertEqual(self.resolver.main_dir, self.test_dir)
 
     def test_set_main_dir_creates_directory(self):
-        test_main_dir = os.path.join(self.test_dir.name, 'main')
+        test_main_dir = os.path.join(self.test_dir, 'main')
         self.resolver.set_main_dir(test_main_dir)
         self.assertTrue(os.path.exists(test_main_dir))
         self.assertEqual(self.resolver.get_main_dir(), test_main_dir)
@@ -51,7 +52,7 @@ class TestPathsResolver(unittest.TestCase):
         self.assertEqual(self.resolver.get_user_last_session('user1'), expected_path)
 
     def tearDown(self):
-        self.test_dir.cleanup()
+        self.temp_dir.cleanup()
 
 if __name__ == '__main__':
     unittest.main()

@@ -4,7 +4,7 @@ from unittest import TestCase
 
 import pandas as pd
 
-from sessions_info import group_sessions_by_enddate, calculate_aggregated_sessions_stats, make_data_frame_from_session
+from sessions_info import group_sessions_by_enddate, calculate_aggregated_sessions_stats, make_epoch_data_frame_from_session
 from sf_api.dom import Session, date_from_iso_string
 
 test_sessions = [
@@ -92,7 +92,7 @@ class Test(TestCase):
         }
 
         # Call the function with the mock object
-        df = make_data_frame_from_session(session_json)
+        df = make_epoch_data_frame_from_session(session_json)
 
         # Assert that the returned DataFrame has the expected structure
         expected_df = pd.DataFrame({

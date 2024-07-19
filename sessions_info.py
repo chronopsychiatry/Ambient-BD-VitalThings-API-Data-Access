@@ -51,7 +51,7 @@ def mark_valid_nights(per_date: dict) -> dict:
         stats['valid'] = stats['max_duration'] > 3*3600
     return per_date
 
-def make_data_frame_from_session(session_json: dict) -> DataFrame:
+def make_epoch_data_frame_from_session(session_json: dict) -> DataFrame:
     """
     Make a DataFrame from a session
     :param session_json: json data for session
@@ -65,6 +65,9 @@ def make_data_frame_from_session(session_json: dict) -> DataFrame:
         raise Exception(f"Epoch data and hypnogram data have different number of rows: {len(epoch_data)} vs {len(epoch_hypnogram)}")
 
     session_data = pd.concat([epoch_hypnogram, epoch_data ], axis=1)
+
+    # add session_id as first column
+    session_data.insert(0, 'session_id', session_json['session_id'])
 
     # change the order of columns that first is 'timestamp' and then rest remains same
     session_data = session_data[['timestamp'] + [col for col in session_data.columns if col != 'timestamp']]

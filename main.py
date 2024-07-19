@@ -8,12 +8,13 @@ import requests
 import json
 import pandas as pd
 import datetime
+import logging
 
 from compliance import calculate_compliance, get_user_nights
-from data_download import set_out_dir, download_user_data
+from data_download import set_out_dir, download_user_data, DataDownloader
 from local_auth import get_auth
 from sessions_info import calculate_aggregated_sessions_stats, group_sessions_by_enddate, mark_valid_nights, \
-    make_data_frame_from_session
+    make_epoch_data_frame_from_session
 from sf_api.dom import User
 from sf_api.somnofy import *
 
@@ -32,16 +33,23 @@ def parse_timestamps(json_obj):
 
 # Press the green button in the gutter to run the script.
 if __name__ == '__main__':
-    print_hi('PyCharm')
 
-    # See PyCharm help at https://www.jetbrains.com/help/pycharm/
+    # Configure the logger
+    logging.basicConfig(
+        level=logging.INFO,  # Set the log level
+        format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',  # Log format
+        handlers=[
+            logging.FileHandler("download.log"),  # Log to a file
+            logging.StreamHandler()  # Log to console
+        ]
+    )
 
     headers = {
         'Accept': 'application/json'
     }
 
-    basic = get_auth(1)
-    print("Accessing somnofy with user: {}".format(basic.username))
+    auth = get_auth(1)
+    print("Accessing somnofy with user: {}".format(auth.username))
     #r = requests.get('https://partner.api.somnofy.com/v1/users', params={}, headers=headers, auth=basic)
     #print(json.dumps(r.json(), indent=2))
 
@@ -61,16 +69,19 @@ if __name__ == '__main__':
     #href = 'https://partner.api.somnofy.com/v1/sessions'
     #r = requests.get(href, params=params, headers=headers, auth=basic)
 
-    from_date = (datetime.datetime.now() - datetime.timedelta(days=7)).isoformat()
+    from_date = (datetime.datetime.now() - datetime.timedelta(days=30)).isoformat()
 
 
-    users = get_users(basic)
+    users = get_users(auth)
     for u in users:
         print(u)
 
-    
+    downloader = DataDownloader()
 
+    for u in users:
+        downloader.download_user_data(auth,u.id, from_date)
 
+'''
     # lorna
     user_id = '64d22532c58c030014afb890'
 
@@ -87,6 +98,7 @@ if __name__ == '__main__':
 
     out = download_user_data(user_id, basic, filter_shorter_than_hours=2)
     print(f'Data saved in {out}')
+'''
 
 '''
     

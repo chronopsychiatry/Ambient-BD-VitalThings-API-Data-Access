@@ -9,6 +9,8 @@ sessions_url = 'https://partner.api.somnofy.com/v1/sessions'
 date_start = '2023-08-01T00:00:00Z'
 date_end = datetime.datetime.now().isoformat()
 
+LIMIT = 50
+
 
 def get_users(auth):
     headers = {
@@ -23,7 +25,7 @@ def get_users(auth):
     return users
 
 
-def make_sessions_params(offset=0, limit=50, from_date=date_start, to_date=date_end):
+def make_sessions_params(offset=0, limit=LIMIT, from_date=date_start, to_date=date_end):
     return {
         'limit': limit,
         'from': from_date,
