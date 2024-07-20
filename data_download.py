@@ -7,23 +7,25 @@ import pandas as pd
 
 import logging
 
+from compliance import ComplianceChecker
 from paths_resolver import PathsResolver
 from sf_api.somnofy import Somnofy
 
 
 class DataDownloader:
-    def __init__(self, somnofy: Somnofy, resolver = PathsResolver()):
+    def __init__(self, somnofy: Somnofy, resolver = PathsResolver(), compliance = ComplianceChecker()):
         if not somnofy:
             raise ValueError('Somnofy connection must be provided')
         self.somnofy = somnofy
         self.resolver = resolver
+        self.compliance = compliance
         self.logger = logging.getLogger(__name__)
         self.filter_shorter_than_hours = 2
 
-    def save_user_data(self, user_id, start_date = None):
+    def save_user_data(self, user_id, start_date = None, force_saved_date = True):
 
-        start_date = start_date or self.get_date_from_last_session(user_id)
-
+        start_date = self.calculate_start_date(user_id, start_date, force_saved_date)
+        self.logger.info(f'Downloading data for user {user_id} starting from {start_date}')
         sessions = self.somnofy.get_all_sessions_for_user(user_id, start_date)
         # print(f'Found {len(sessions)} sessions for user {user_id} between {start_date} and now')
 
@@ -54,11 +56,19 @@ class DataDownloader:
             last_session = s
             last_session_json = s_json
 
-        self.save_reports(reports, user_id, sessions,last_session)
+        if len(sessions) == 0:
+            return
+        if not last_session or not last_session.end_time:
+            return
+        dates = self.sessions_to_date_range(sessions[0], last_session)
+
+        self.save_reports(reports, user_id, dates)
         self.append_to_global_reports(reports, user_id)
-        self.save_epoch_data(epoch_data, user_id, sessions,last_session)
+        self.save_epoch_data(epoch_data, user_id, dates)
         self.save_last_session(last_session_json, user_id)
 
+        compliance_info = self.compliance.calculate_compliance(reports, dates)
+        self.save_compliance_info(compliance_info, user_id, dates)
 
     def should_store_epoch_data(self, session):
         return not self.filter_shorter_than_hours or not session.duration_seconds or session.duration_seconds > self.filter_shorter_than_hours * 60 * 60
@@ -74,14 +84,26 @@ class DataDownloader:
             return True
         return False
 
-    def get_date_from_last_session(self, user_id):
-        session_file = self.resolver.get_user_last_session(user_id)
-        if os.path.exists(session_file):
-            with open(session_file, 'r') as f:
-                session = json.load(f)
-                return datetime.datetime.fromisoformat(session['end_time'])
+    def calculate_start_date(self, user_id, proposed_date = None, force_saved_date = True):
+
+        if force_saved_date:
+            start_date = self.get_date_from_last_session(user_id) or proposed_date
         else:
-            raise ValueError(f'No last session found for user {user_id} and no start date provided')
+            start_date = proposed_date or self.get_date_from_last_session(user_id)
+
+        if not start_date:
+            raise ValueError(f'No start date found for user {user_id} and none proposed')
+
+        return start_date
+
+    def get_date_from_last_session(self, user_id):
+        if not self.resolver.has_last_session(user_id):
+            return None
+
+        session_file = self.resolver.get_user_last_session(user_id)
+        with open(session_file, 'r') as f:
+            session = json.load(f)
+            return datetime.datetime.fromisoformat(session['end_time'])
 
     def save_raw_session_data(self, s_json, user_id, session_id):
 
@@ -98,13 +120,10 @@ class DataDownloader:
             with open(path, 'w') as f:
                 json.dump(last_session_json, f)
 
-    def save_reports(self, reports, user_id, sessions, last_session):
-        if len(sessions) == 0:
-            return
-        if not last_session:
-            return
+    def save_reports(self, reports, user_id, dates):
 
-        dates = self.sessions_to_date_range(sessions[0], last_session)
+
+
 
         file_name = f'{dates[0]}_{dates[1]}_sessions_reports.csv'
         user_dir = self.resolver.get_user_data_dir(user_id)
@@ -116,13 +135,7 @@ class DataDownloader:
         end_date = last_session.end_time.date()
         return start_date, end_date
 
-    def save_epoch_data(self, epoch_data, user_id, sessions, last_session):
-        if len(sessions) == 0:
-            return
-        if not last_session:
-            return
-
-        dates = self.sessions_to_date_range(sessions[0], last_session)
+    def save_epoch_data(self, epoch_data, user_id, dates):
 
         file_name = f'{dates[0]}_{dates[1]}_epoch_data.csv'
         user_dir = self.resolver.get_user_data_dir(user_id)
@@ -155,6 +168,14 @@ class DataDownloader:
     def append_to_global_reports(self, reports, user_id):
         file = self.resolver.get_user_global_report(user_id)
         reports.to_csv(file, mode='a', header=not os.path.exists(file), index=False)
+
+    def save_compliance_info(self, compliance_info, user_id, dates):
+
+
+        file_name = f'{dates[0]}_{dates[1]}_compliance_info.csv'
+        user_dir = self.resolver.get_user_data_dir(user_id)
+        path = os.path.join(user_dir, file_name)
+        compliance_info.to_csv(path, index=False)
 
 
 '''

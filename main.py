@@ -68,8 +68,7 @@ if __name__ == '__main__':
     #href = 'https://partner.api.somnofy.com/v1/sessions'
     #r = requests.get(href, params=params, headers=headers, auth=basic)
 
-    from_date = (datetime.datetime.now() - datetime.timedelta(days=30)).isoformat()
-
+    from_date = (datetime.datetime.now() - datetime.timedelta(days=30))
 
     users = somnofy.get_users()
     for u in users:
