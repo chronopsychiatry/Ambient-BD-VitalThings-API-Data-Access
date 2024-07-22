@@ -10,8 +10,8 @@ from sf_api.somnofy import *
 
 
 
-if __name__ == '__main__':
 
+def main():
     # Configure the logger
     logging.basicConfig(
         level=logging.INFO,  # Set the log level
@@ -51,3 +51,7 @@ if __name__ == '__main__':
     user_id = '65367bfb2b751b0013e9bebf'
 
 '''
+
+
+if __name__ == '__main__':
+    main()
