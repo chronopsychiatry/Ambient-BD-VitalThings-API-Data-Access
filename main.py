@@ -12,10 +12,18 @@ from storage.paths_resolver import PathsResolver
 
 
 class Properties():
-    def __init__(self, auth_file = '../auth.tsv', auth_user = 0, download_folder = '../downloaded_data'):
+    def __init__(self, auth_file = '../auth.tsv', auth_user = 0,
+                 download_folder = '../downloaded_data', from_date = None):
         self.auth_file = auth_file
         self.auth_user = auth_user
         self.download_folder = download_folder
+        if from_date is None:
+            from_date = datetime.datetime.now() - datetime.timedelta(days=14)
+        # if from_date is a string, convert it to datetime
+        if isinstance(from_date, str):
+            from_date = datetime.datetime.fromisoformat(from_date)
+        self.from_date = from_date
+
 
 
 def load_application_properties():
@@ -24,7 +32,8 @@ def load_application_properties():
     return Properties(
         auth_file=config['DEFAULT']['auth-file'],
         auth_user=int(config['DEFAULT']['auth-user']),
-        download_folder=config['DEFAULT']['download-dir']
+        download_folder=config['DEFAULT']['download-dir'],
+        from_date= config['DEFAULT']['from-date']
     )
 
 
@@ -45,17 +54,18 @@ def main():
 
     authentication = SimpleFileAuth(properties.auth_file)
     auth = authentication.get_auth(properties.auth_user)
+    from_date = properties.from_date
+
     logger.info("Accessing somnofy with user: {}".format(auth.username))
 
-    from_date = (datetime.datetime.now() - datetime.timedelta(days=14))
     somnofy = Somnofy(auth)
 
-    resolver = PathsResolver(properties.download_folder)
 
     users = somnofy.get_users()
     for u in users:
-        logger.info(f"Available {u}")
+        logger.info(f"{u}")
 
+    resolver = PathsResolver(properties.download_folder)
     downloader = DataDownloader(somnofy, resolver=resolver)
 
     for u in users:
