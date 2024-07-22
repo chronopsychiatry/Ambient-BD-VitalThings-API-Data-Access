@@ -39,7 +39,7 @@ class Somnofy:
         json_list = r.json()["_embedded"]["users"]
         return [User(user_data) for user_data in json_list]
 
-    def make_sessions_params(self, offset=0, limit=None, from_date=None, to_date=None):
+    def _make_sessions_params(self, offset=0, limit=None, from_date=None, to_date=None):
         if limit is None:
             limit = self.LIMIT
         if from_date is None:
@@ -60,7 +60,7 @@ class Somnofy:
         are_more = True
         sessions = []
         while are_more:
-            params = self.make_sessions_params(offset, from_date=from_date, to_date=to_date)
+            params = self._make_sessions_params(offset, from_date=from_date, to_date=to_date)
             params['user_id'] = user_id
             r = requests.get(self.sessions_url, params=params, headers=headers, auth=self.auth)
             json_list = r.json()["_embedded"]["sessions"]

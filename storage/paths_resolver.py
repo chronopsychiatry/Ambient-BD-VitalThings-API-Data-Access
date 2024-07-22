@@ -1,25 +1,27 @@
-import datetime
+
 import os
+import logging
 
 class PathsResolver:
 
-    def __init__(self, path = os.path.join('.','downloaded_data')):
+    def __init__(self, path = os.path.join('..', 'downloaded_data')):
+        self._logger = logging.getLogger(__name__)
+        self._main_dir = None
+        self.set_main_dir(path)
 
-        self.main_dir = path
-
-    # define instance method set_main_dir
     def set_main_dir(self, path):
         if not os.path.exists(path):
             os.makedirs(path)
         if not os.path.isdir(path):
             raise ValueError(f'Main storage: {path} is not a directory')
-        self.main_dir = path
+        self._main_dir = path
+        self._logger.info(f'Using storage dir: {os.path.abspath(self._main_dir)}')
 
     def get_main_dir(self):
-        return self.main_dir
+        return self._main_dir
 
     def get_user_dir(self, user_id):
-        user_dir = os.path.join(self.main_dir, user_id)
+        user_dir = os.path.join(self._main_dir, user_id)
         if not os.path.exists(user_dir):
             os.makedirs(user_dir)
         return user_dir
@@ -46,7 +48,7 @@ class PathsResolver:
         return os.path.join(self.get_user_sys_dir(user_id), 'last_session.json')
 
     def has_last_session(self, user_id):
-        last_path = os.path.join(self.main_dir, user_id, 'sys', 'last_session.json')
+        last_path = os.path.join(self._main_dir, user_id, 'sys', 'last_session.json')
         return os.path.exists(last_path)
 
 

@@ -1,8 +1,7 @@
 import unittest
 import tempfile
 import os
-import shutil
-from paths_resolver import PathsResolver
+from storage.paths_resolver import PathsResolver
 
 class TestPathsResolver(unittest.TestCase):
     def setUp(self):
@@ -11,7 +10,7 @@ class TestPathsResolver(unittest.TestCase):
         self.resolver = PathsResolver(self.test_dir)
 
     def test_initialization(self):
-        self.assertEqual(self.resolver.main_dir, self.test_dir)
+        self.assertEqual(self.resolver._main_dir, self.test_dir)
 
     def test_set_main_dir_creates_directory(self):
         test_main_dir = os.path.join(self.test_dir, 'main')
