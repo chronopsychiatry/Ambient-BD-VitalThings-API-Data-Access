@@ -13,11 +13,11 @@ class ComplianceChecker:
         stats = records.groupby('night_date').agg(
             number_of_long_sessions=('session_id', 'count'),
             max_time_asleep_h=('time_asleep', 'max'),
-            time_in_bed_h=('time_in_bed', 'max'),
+            max_time_in_bed_h=('time_in_bed', 'max'),
         ).reset_index()
 
         stats['max_time_asleep_h'] = (stats['max_time_asleep_h'] / 3600).round(2)
-        stats['time_in_bed_h'] = (stats['time_in_bed_h'] / 3600).round(2)
+        stats['max_time_in_bed_h'] = (stats['max_time_in_bed_h'] / 3600).round(2)
         stats['valid'] = stats['max_time_asleep_h'] > 3
 
 

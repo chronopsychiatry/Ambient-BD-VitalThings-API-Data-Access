@@ -9,6 +9,7 @@ class TestComplianceChecker(unittest.TestCase):
         self.sample_records = pd.DataFrame({
             'session_id': [1, 2, 3, 4],
             'session_end': ['2023-01-01 08:00:00', '2023-01-01 07:00:00', '2023-01-02 09:00:00', '2023-01-04 06:00:00'],
+            'time_in_bed': [3600*4.1, 3600*3.5, 2.6*3600, 3600*5.1],
             'time_asleep': [3600*3, 3600*4, 2.5*3600, 3600*5]
         })
         self.sample_records['session_end'] = pd.to_datetime(self.sample_records['session_end'])
@@ -24,6 +25,7 @@ class TestComplianceChecker(unittest.TestCase):
             'night_date': ['2023-01-01', '2023-01-02','2023-01-04'],
             'number_of_long_sessions': [2, 1,  1],
             'max_time_asleep_h': [4.0, 2.5,  5.0],
+            'max_time_in_bed_h': [4.1, 2.6, 5.1],
             'valid': [True, False, True]
         })
         expected['night_date'] = pd.to_datetime(expected['night_date']).dt.date

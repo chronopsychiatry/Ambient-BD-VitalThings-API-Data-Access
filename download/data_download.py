@@ -105,7 +105,11 @@ class DataDownloader:
         session_file = self._resolver.get_user_last_session(user_id)
         with open(session_file, 'r') as f:
             session = json.load(f)
-            return datetime.datetime.fromisoformat(session['end_time'])
+            end_time = datetime.datetime.fromisoformat(session['end_time'])
+            start_time = datetime.datetime.fromisoformat(session['start_time'])
+            if end_time == start_time:
+                end_time = end_time + datetime.timedelta(microseconds=1)
+            return end_time
 
     def save_raw_session_data(self, s_json, user_id, session_id):
 

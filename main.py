@@ -61,7 +61,12 @@ def main():
     for u in users:
         downloader.save_user_data(u.id, from_date)
 
-'''
+    '''
+    
+    user_id = '6675947f056bcf001afae435'
+    sessions = somnofy.get_all_sessions_for_user(user_id, from_date = '2024-07-20T22:22:42.739001')
+    for s in sessions:
+        print(s)    
     # lorna
     user_id = '64d22532c58c030014afb890'
 

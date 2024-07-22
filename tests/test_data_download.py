@@ -16,7 +16,7 @@ class MockSomnofy(Somnofy):
     # define method __init__
     def __init__(self):
         self.test_session_json = os.path.join('data','2024-07-20_VFNPVRgHFAA1AwAA_raw.json')
-        print(f'session_json: {os.path.abspath(self.test_session_json)}')
+        print(f'mock session_json: {os.path.abspath(self.test_session_json)}')
 
     def _read_test_session_json(self):
         with open(self.test_session_json, 'r') as f:
@@ -97,25 +97,40 @@ class TestDataDownloader(unittest.TestCase):
 
 
 
-    def test_calculate_start_date_with_no_date(self):
+    def test_calculate_start_date_with_proposed_date(self):
         with self.assertRaises(ValueError):
             self.data_downloader.calculate_start_date(user_id='test_user')
 
         proposed_date = '2020-01-01'
         self.assertEqual(self.data_downloader.calculate_start_date(user_id='test_user', proposed_date=proposed_date), proposed_date)
 
+    def test_calculate_start_date_with_saved_date(self):
+        proposed_date = '2020-01-01'
         last_session_file = self.mock_resolver.get_user_last_session(user_id='test_user')
-        last_session = {'end_time': '2023-01-01T00:00:00'}
+        last_session = {'start_time': '2023-01-01T00:00:00', 'end_time': '2023-01-01T02:00:00'}
         try:
             with open(last_session_file, 'w') as f:
                 json.dump(last_session, f)
-            # print(f'last_session_file: {os.path.abspath(last_session_file)}')
 
             last_session['end_time'] = datetime.datetime.fromisoformat(last_session['end_time'])
             self.assertEqual(self.data_downloader.calculate_start_date(user_id='test_user', proposed_date=proposed_date, force_saved_date=True), last_session['end_time'])
         finally:
             os.remove(last_session_file)
-            pass
+
+    def test_calculate_start_date_with_session_duration_zero(self):
+        proposed_date = '2020-01-01'
+        last_session_file = self.mock_resolver.get_user_last_session(user_id='test_user')
+        last_session = {'start_time': '2023-01-01T00:00:00', 'end_time': '2023-01-01T00:00:00'}
+        try:
+            with open(last_session_file, 'w') as f:
+                json.dump(last_session, f)
+
+            last_session['end_time'] = datetime.datetime.fromisoformat(last_session['end_time'])
+            start_date = self.data_downloader.calculate_start_date(user_id='test_user', proposed_date=proposed_date, force_saved_date=True)
+            self.assertGreater(start_date, last_session['end_time'])
+            self.assertEqual(start_date.replace(microsecond=0), last_session['end_time'])
+        finally:
+            os.remove(last_session_file)
 
     def tearDown(self):
         self.test_dir.cleanup()

@@ -46,6 +46,12 @@ class Somnofy:
             from_date = self.date_start
         if to_date is None:
             to_date = self.date_end
+
+        if isinstance(from_date, datetime.datetime):
+            from_date = from_date.isoformat()
+        if isinstance(to_date, datetime.datetime):
+            to_date = to_date.isoformat()
+
         return {
             'limit': limit,
             'from': from_date,
@@ -55,12 +61,14 @@ class Somnofy:
         }
 
     def get_all_sessions_for_user(self, user_id, from_date=None, to_date=None):
+
         headers = {'Accept': 'application/json'}
         offset = 0
+        params = self._make_sessions_params(offset, from_date=from_date, to_date=to_date)
         are_more = True
         sessions = []
         while are_more:
-            params = self._make_sessions_params(offset, from_date=from_date, to_date=to_date)
+            params['offset'] = offset
             params['user_id'] = user_id
             r = requests.get(self.sessions_url, params=params, headers=headers, auth=self.auth)
             json_list = r.json()["_embedded"]["sessions"]
@@ -83,75 +91,3 @@ class Somnofy:
         return self.get_session_json(session_id, user_id, embeds=SESSION_REPORT_OUTPUT)
 
 
-'''
-def get_users(auth):
-    headers = {
-        'Accept': 'application/json'
-    }
-
-    r = requests.get(users_url, params={}, headers=headers, auth=auth)
-
-    json_list = r.json()["_embedded"]["users"]
-
-    users = [User(user_data) for user_data in json_list]
-    return users
-
-
-def make_sessions_params(offset=0, limit=LIMIT, from_date=date_start, to_date=date_end):
-    return {
-        'limit': limit,
-        'from': from_date,
-        'to': to_date,
-        'offset': offset,
-        'sort': 'asc'
-
-    }
-
-
-def get_all_sessions_for_user(user_id, auth, from_date=date_start, to_date=date_end):
-    headers = {
-        'Accept': 'application/json'
-    }
-    offset = 0
-    are_more = True
-    sessions = []
-    while are_more:
-
-
-        params = make_sessions_params(offset, from_date=from_date, to_date=to_date)
-        params['user_id'] = user_id
-        r = requests.get(sessions_url, params=params, headers=headers, auth=auth)
-
-        json_list = r.json()["_embedded"]["sessions"]
-        offset += len(json_list)
-
-        sessions += [Session(data) for data in json_list]
-        are_more = len(json_list) > 0 and not (sessions[-1].state == 'IN_PROGRESS')
-    return sessions
-
-
-
-
-def get_session_json(session_id, user_id, auth, embeds = SESSION_DATA_OUTPUTS):
-    headers = {
-        'Accept': 'application/json'
-    }
-
-
-    params = {
-
-        # 'limit': 2,
-        # 'from': '2024-02-12T00:00:00',
-        # 'to': '2024-02-13T00:00:00', #outputs[0], outputs[1],
-        'user_id': user_id,
-        'embed': embeds
-    }
-
-    url = sessions_url + '/' + session_id
-    r = requests.get(url, params=params, headers=headers, auth=auth)
-    return r.json()
-
-def get_session_report(session_id, user_id, auth):
-    return get_session_json(session_id, user_id, auth, embeds=SESSION_REPORT_OUTPUT)
-    
-'''
