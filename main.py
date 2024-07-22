@@ -3,12 +3,29 @@
 # Press Double Shift to search everywhere for classes, files, tool windows, actions, and settings.
 
 import logging
+import configparser
 
 from download.data_download import DataDownloader
 from authentication.file_auth import SimpleFileAuth
 from sf_api.somnofy import *
+from storage.paths_resolver import PathsResolver
 
 
+class Properties():
+    def __init__(self, auth_file = '../auth.tsv', auth_user = 0, download_folder = '../downloaded_data'):
+        self.auth_file = auth_file
+        self.auth_user = auth_user
+        self.download_folder = download_folder
+
+
+def load_application_properties():
+    config = configparser.ConfigParser()
+    config.read('application.properties')
+    return Properties(
+        auth_file=config['DEFAULT']['auth-file'],
+        auth_user=int(config['DEFAULT']['auth-user']),
+        download_folder=config['DEFAULT']['download-dir']
+    )
 
 
 def main():
@@ -24,21 +41,22 @@ def main():
 
     logger = logging.getLogger('main')
 
+    properties = load_application_properties()
 
-    authentication = SimpleFileAuth()
-    auth = authentication.get_auth(1)
-
+    authentication = SimpleFileAuth(properties.auth_file)
+    auth = authentication.get_auth(properties.auth_user)
     logger.info("Accessing somnofy with user: {}".format(auth.username))
 
     from_date = (datetime.datetime.now() - datetime.timedelta(days=30))
     somnofy = Somnofy(auth)
 
+    resolver = PathsResolver(properties.download_folder)
 
     users = somnofy.get_users()
     for u in users:
         logger.info(f"Available {u}")
 
-    downloader = DataDownloader(somnofy)
+    downloader = DataDownloader(somnofy, resolver=resolver)
 
     for u in users:
         downloader.save_user_data(u.id, from_date)
