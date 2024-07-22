@@ -47,7 +47,7 @@ def main():
     auth = authentication.get_auth(properties.auth_user)
     logger.info("Accessing somnofy with user: {}".format(auth.username))
 
-    from_date = (datetime.datetime.now() - datetime.timedelta(days=30))
+    from_date = (datetime.datetime.now() - datetime.timedelta(days=14))
     somnofy = Somnofy(auth)
 
     resolver = PathsResolver(properties.download_folder)

@@ -47,6 +47,9 @@ class Somnofy:
         if to_date is None:
             to_date = self.date_end
 
+        # if data is passed to params as an object, the API does not take time part of the timestamp
+        # and all sessions from the start date are turned
+        # if start_time is expilicitly converted to string than API behaves as expected
         if isinstance(from_date, datetime.datetime):
             from_date = from_date.isoformat()
         if isinstance(to_date, datetime.datetime):

@@ -107,6 +107,8 @@ class DataDownloader:
             session = json.load(f)
             end_time = datetime.datetime.fromisoformat(session['end_time'])
             start_time = datetime.datetime.fromisoformat(session['start_time'])
+            # some sessions have duration of 0 and are being re-downloaded even if saved as last session
+            # we add one microsecond to end time to avoid re-downloading
             if end_time == start_time:
                 end_time = end_time + datetime.timedelta(microseconds=1)
             return end_time

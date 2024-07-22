@@ -26,6 +26,7 @@ class TestComplianceChecker(unittest.TestCase):
             'number_of_long_sessions': [2, 1,  1],
             'max_time_asleep_h': [4.0, 2.5,  5.0],
             'max_time_in_bed_h': [4.1, 2.6, 5.1],
+            'total_sleep_time_h': [7.0, 2.5, 5.0],
             'valid': [True, False, True]
         })
         expected['night_date'] = pd.to_datetime(expected['night_date']).dt.date

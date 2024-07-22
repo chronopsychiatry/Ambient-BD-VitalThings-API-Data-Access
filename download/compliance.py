@@ -12,13 +12,16 @@ class ComplianceChecker:
 
         stats = records.groupby('night_date').agg(
             number_of_long_sessions=('session_id', 'count'),
-            max_time_asleep_h=('time_asleep', 'max'),
             max_time_in_bed_h=('time_in_bed', 'max'),
+            max_time_asleep_h=('time_asleep', 'max'),
+            total_sleep_time_h=('time_asleep', 'sum')
+
         ).reset_index()
 
         stats['max_time_asleep_h'] = (stats['max_time_asleep_h'] / 3600).round(2)
         stats['max_time_in_bed_h'] = (stats['max_time_in_bed_h'] / 3600).round(2)
-        stats['valid'] = stats['max_time_asleep_h'] > 3
+        stats['total_sleep_time_h'] = (stats['total_sleep_time_h'] / 3600).round(2)
+        stats['valid'] = stats['total_sleep_time_h'] > 4
 
 
         return stats
@@ -38,6 +41,8 @@ class ComplianceChecker:
         missing_nights['valid'] = False
         missing_nights['number_of_long_sessions'] = 0
         missing_nights['max_time_asleep_h'] = 0
+        missing_nights['max_time_in_bed_h'] = 0
+        missing_nights['total_sleep_time_h'] = 0
 
         stats = pd.concat([compliance_info, missing_nights], ignore_index=True)
         return stats
