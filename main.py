@@ -4,6 +4,7 @@
 
 import logging
 import configparser
+from typing import Union
 
 from download.data_download import DataDownloader
 from authentication.file_auth import SimpleFileAuth
@@ -12,10 +13,13 @@ from storage.paths_resolver import PathsResolver
 
 
 class Properties():
-    def __init__(self, auth_file = None, auth_user = None,
-                 download_folder = '../downloaded_data', from_date = None,
-                 ignore_epoch_for_shorter_than_hours = None,
-                 flag_nights_with_sleep_under_hours = None):
+    def __init__(self, auth_file = None,
+                 auth_user: Union[str, int] = None,
+                 download_folder = '../downloaded_data',
+                 from_date = None,
+                 ignore_epoch_for_shorter_than_hours: Union[str, float] = None,
+                 flag_nights_with_sleep_under_hours: Union[str, float] = None):
+
         self.auth_file = auth_file or '../auth.tsv'
         self.auth_user = int(auth_user or 0)
         self.download_folder = download_folder or '../downloaded_data'
@@ -27,21 +31,25 @@ class Properties():
             from_date = datetime.datetime.fromisoformat(from_date)
         self.from_date = from_date
 
-        self.ignore_epoch_for_shorter_than_hours = int(ignore_epoch_for_shorter_than_hours or 2)
-        self.flag_nights_with_sleep_under_hours = int(flag_nights_with_sleep_under_hours or 5)
+        self.ignore_epoch_for_shorter_than_hours = float(ignore_epoch_for_shorter_than_hours or 2)
+        self.flag_nights_with_sleep_under_hours = float(flag_nights_with_sleep_under_hours or 5)
 
-
+    def __str__(self):
+        return f"Properties(auth_file={self.auth_file}, auth_user={self.auth_user}, " \
+               f"download_folder={self.download_folder}, from_date={self.from_date}, " \
+               f"ignore_epoch_for_shorter_than_hours={self.ignore_epoch_for_shorter_than_hours}, " \
+               f"flag_nights_with_sleep_under_hours={self.flag_nights_with_sleep_under_hours})"
 
 def load_application_properties():
     config = configparser.ConfigParser()
     config.read('application.properties')
     return Properties(
-        auth_file=config['DEFAULT']['auth-file'],
-        auth_user=config['DEFAULT']['auth-user'],
-        download_folder=config['DEFAULT']['download-dir'],
-        from_date= config['DEFAULT']['from-date'],
-        ignore_epoch_for_shorter_than_hours=config['DEFAULT']['ignore-epoch-for-shorter-than-hours'],
-        flag_nights_with_sleep_under_hours=config['DEFAULT']['flag-nights-with-sleep-under-hours']
+        auth_file=config['DEFAULT'].get('auth-file', None),
+        auth_user=config['DEFAULT'].get('auth-user', None),
+        download_folder=config['DEFAULT'].get('download-dir', None),
+        from_date=config['DEFAULT'].get('from-date', None),
+        ignore_epoch_for_shorter_than_hours=config['DEFAULT'].get('ignore-epoch-for-shorter-than-hours', None),
+        flag_nights_with_sleep_under_hours=config['DEFAULT'].get('flag-nights-with-sleep-under-hours', None)
     )
 
 
@@ -59,12 +67,8 @@ def main():
 
     logger = logging.getLogger('main')
 
-    properties = Properties()
-    logger.info(f"{properties}")
-    if True:
-        return
-
     properties = load_application_properties()
+    logger.info(f"Properties: {properties}")
 
     authentication = SimpleFileAuth(properties.auth_file)
     auth = authentication.get_auth(properties.auth_user)
@@ -80,24 +84,14 @@ def main():
         logger.info(f"{u}")
 
     resolver = PathsResolver(properties.download_folder)
-    downloader = DataDownloader(somnofy, resolver=resolver)
+    downloader = DataDownloader(somnofy, resolver=resolver,
+                                ignore_epoch_for_shorter_than_hours=properties.ignore_epoch_for_shorter_than_hours,
+                                filter_shorter_than_hours=properties.flag_nights_with_sleep_under_hours)
 
     for u in users:
         downloader.save_user_data(u, from_date)
 
-    '''
-    
-    user_id = '6675947f056bcf001afae435'
-    sessions = somnofy.get_all_sessions_for_user(user_id, from_date = '2024-07-20T22:22:42.739001')
-    for s in sessions:
-        print(s)    
-    # lorna
-    user_id = '64d22532c58c030014afb890'
 
-    # tomek
-    user_id = '65367bfb2b751b0013e9bebf'
-
-'''
 
 
 if __name__ == '__main__':

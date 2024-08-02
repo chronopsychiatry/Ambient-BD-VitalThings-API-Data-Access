@@ -6,7 +6,7 @@ import pandas as pd
 
 import logging
 
-from sf_api.dom import User
+from sf_api.dom import User, Session
 from .compliance import ComplianceChecker
 from storage.paths_resolver import PathsResolver
 from sf_api.somnofy import Somnofy
@@ -14,7 +14,9 @@ from sf_api.somnofy import Somnofy
 
 class DataDownloader:
     def __init__(self, somnofy: Somnofy, resolver: PathsResolver = None,
-                 compliance = ComplianceChecker()):
+                 compliance = ComplianceChecker(),
+                 ignore_epoch_for_shorter_than_hours = 2,
+                 filter_shorter_than_hours = 5):
         if not somnofy:
             raise ValueError('Somnofy connection must be provided')
         self._somnofy = somnofy
@@ -22,8 +24,10 @@ class DataDownloader:
             resolver = PathsResolver()
         self._resolver = resolver
         self._compliance_checker = compliance
+        self._compliance_checker.flag_shorter_than_hours = filter_shorter_than_hours
+        self.ignore_epoch_for_shorter_than_hours = ignore_epoch_for_shorter_than_hours
         self._logger = logging.getLogger(__name__)
-        self.filter_shorter_than_hours = 2
+
 
     def user_to_subject_id(self, user):
         return user.last_name + '-' + user.id
@@ -78,8 +82,9 @@ class DataDownloader:
         compliance_info = self._compliance_checker.calculate_compliance(reports, dates)
         self.save_compliance_info(compliance_info, subject_id, dates)
 
-    def _should_store_epoch_data(self, session):
-        return not self.filter_shorter_than_hours or not session.duration_seconds or session.duration_seconds > self.filter_shorter_than_hours * 60 * 60
+    def _should_store_epoch_data(self, session: Session):
+        return (not self.ignore_epoch_for_shorter_than_hours or
+                (session.duration_seconds and session.duration_seconds >= self.ignore_epoch_for_shorter_than_hours * 60 * 60))
 
     def _make_session_report(self, s_json):
         df = pd.DataFrame(s_json['_embedded']['sleep_analysis']['report'], index=[0])

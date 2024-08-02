@@ -13,6 +13,7 @@ class TestComplianceChecker(unittest.TestCase):
             'time_asleep': [3600*3, 3600*4, 2.5*3600, 3600*5]
         })
         self.sample_records['session_end'] = pd.to_datetime(self.sample_records['session_end'])
+        self.checker.flag_shorter_than_hours = 5
 
     def test_aggregate_session_records(self):
         result = self.checker.aggregate_session_records(self.sample_records)
@@ -31,6 +32,15 @@ class TestComplianceChecker(unittest.TestCase):
         })
         expected['night_date'] = pd.to_datetime(expected['night_date']).dt.date
         self.assertEqual(result.to_dict(), expected.to_dict())
+
+    def test_uses_flag_parameter_to_mark_valid(self):
+        self.checker.flag_shorter_than_hours = 3
+        result = self.checker.aggregate_session_records(self.sample_records)
+        self.assertTrue((result.loc[result['night_date'].isin([datetime(2023, 1, 2).date()]), 'valid'] == False).all())
+
+        self.checker.flag_shorter_than_hours = 2.5
+        result = self.checker.aggregate_session_records(self.sample_records)
+        self.assertTrue((result.loc[result['night_date'].isin([datetime(2023, 1, 2).date()]), 'valid'] == True).all())
 
     def test_add_missing_nights(self):
         compliance_info = self.checker.aggregate_session_records(self.sample_records)

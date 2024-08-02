@@ -135,6 +135,25 @@ class TestDataDownloader(unittest.TestCase):
         finally:
             os.remove(last_session_file)
 
+    def test_should_store_epoch_data(self):
+        # create session object
+        session = Session(self.mock_somnofy._read_test_session_json())
+        session.duration_seconds = 3600
+        self.data_downloader.ignore_epoch_for_shorter_than_hours = None
+
+        result = self.data_downloader._should_store_epoch_data(session)
+        self.assertTrue(result)
+
+        self.data_downloader.ignore_epoch_for_shorter_than_hours = 2
+        result = self.data_downloader._should_store_epoch_data(session)
+        self.assertFalse(result)
+
+        self.data_downloader.ignore_epoch_for_shorter_than_hours = 1
+        result = self.data_downloader._should_store_epoch_data(session)
+        self.assertTrue(result)
+
+
+
     def tearDown(self):
         self.test_dir.cleanup()
 

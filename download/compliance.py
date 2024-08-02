@@ -5,6 +5,9 @@ import pandas as pd
 
 class ComplianceChecker:
 
+    def __init__(self, flag_shorter_than_hours=5):
+        self.flag_shorter_than_hours = flag_shorter_than_hours
+
     def aggregate_session_records(self, records: pd.DataFrame) -> pd.DataFrame:
 
         records['session_end'] = pd.to_datetime(records['session_end'])
@@ -21,7 +24,7 @@ class ComplianceChecker:
         stats['max_time_asleep_h'] = (stats['max_time_asleep_h'] / 3600).round(2)
         stats['max_time_in_bed_h'] = (stats['max_time_in_bed_h'] / 3600).round(2)
         stats['total_sleep_time_h'] = (stats['total_sleep_time_h'] / 3600).round(2)
-        stats['valid'] = stats['total_sleep_time_h'] > 4
+        stats['valid'] = stats['total_sleep_time_h'] >= self.flag_shorter_than_hours
 
 
         return stats
