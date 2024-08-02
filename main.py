@@ -36,6 +36,8 @@ def load_application_properties():
         from_date= config['DEFAULT']['from-date']
     )
 
+def user_to_subject_id(user):
+    return user.last_name+'-'+user.id
 
 def main():
     # Configure the logger
@@ -69,7 +71,7 @@ def main():
     downloader = DataDownloader(somnofy, resolver=resolver)
 
     for u in users:
-        downloader.save_user_data(u.id, from_date)
+        downloader.save_user_data(user_to_subject_id(u), from_date)
 
     '''
     
