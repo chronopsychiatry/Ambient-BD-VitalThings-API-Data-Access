@@ -12,17 +12,23 @@ from storage.paths_resolver import PathsResolver
 
 
 class Properties():
-    def __init__(self, auth_file = '../auth.tsv', auth_user = 0,
-                 download_folder = '../downloaded_data', from_date = None):
-        self.auth_file = auth_file
-        self.auth_user = auth_user
-        self.download_folder = download_folder
+    def __init__(self, auth_file = None, auth_user = None,
+                 download_folder = '../downloaded_data', from_date = None,
+                 ignore_epoch_for_shorter_than_hours = None,
+                 flag_nights_with_sleep_under_hours = None):
+        self.auth_file = auth_file or '../auth.tsv'
+        self.auth_user = int(auth_user or 0)
+        self.download_folder = download_folder or '../downloaded_data'
+
         if from_date is None:
             from_date = datetime.datetime.now() - datetime.timedelta(days=14)
         # if from_date is a string, convert it to datetime
         if isinstance(from_date, str):
             from_date = datetime.datetime.fromisoformat(from_date)
         self.from_date = from_date
+
+        self.ignore_epoch_for_shorter_than_hours = int(ignore_epoch_for_shorter_than_hours or 2)
+        self.flag_nights_with_sleep_under_hours = int(flag_nights_with_sleep_under_hours or 5)
 
 
 
@@ -31,13 +37,14 @@ def load_application_properties():
     config.read('application.properties')
     return Properties(
         auth_file=config['DEFAULT']['auth-file'],
-        auth_user=int(config['DEFAULT']['auth-user']),
+        auth_user=config['DEFAULT']['auth-user'],
         download_folder=config['DEFAULT']['download-dir'],
-        from_date= config['DEFAULT']['from-date']
+        from_date= config['DEFAULT']['from-date'],
+        ignore_epoch_for_shorter_than_hours=config['DEFAULT']['ignore-epoch-for-shorter-than-hours'],
+        flag_nights_with_sleep_under_hours=config['DEFAULT']['flag-nights-with-sleep-under-hours']
     )
 
-def user_to_subject_id(user):
-    return user.last_name+'-'+user.id
+
 
 def main():
     # Configure the logger
@@ -51,6 +58,11 @@ def main():
     )
 
     logger = logging.getLogger('main')
+
+    properties = Properties()
+    logger.info(f"{properties}")
+    if True:
+        return
 
     properties = load_application_properties()
 
@@ -71,7 +83,7 @@ def main():
     downloader = DataDownloader(somnofy, resolver=resolver)
 
     for u in users:
-        downloader.save_user_data(user_to_subject_id(u), from_date)
+        downloader.save_user_data(u, from_date)
 
     '''
     

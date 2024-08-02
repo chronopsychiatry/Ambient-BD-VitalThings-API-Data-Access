@@ -6,6 +6,7 @@ import pandas as pd
 
 import logging
 
+from sf_api.dom import User
 from .compliance import ComplianceChecker
 from storage.paths_resolver import PathsResolver
 from sf_api.somnofy import Somnofy
@@ -24,11 +25,16 @@ class DataDownloader:
         self._logger = logging.getLogger(__name__)
         self.filter_shorter_than_hours = 2
 
-    def save_user_data(self, subject_id, start_date = None, force_saved_date = True):
+    def user_to_subject_id(self, user):
+        return user.last_name + '-' + user.id
 
+    def save_user_data(self, user: User, start_date = None, force_saved_date = True):
+
+        subject_id = self.user_to_subject_id(user)
+        self._logger.info(f'{subject_id} {user}')
         start_date = self.calculate_start_date(subject_id, start_date, force_saved_date)
         self._logger.info(f'Downloading data for user {subject_id} starting from {start_date}')
-        sessions = self._somnofy.get_all_sessions_for_user(subject_id, start_date)
+        sessions = self._somnofy.get_all_sessions_for_user(user.id, start_date)
 
         if len(sessions) == 0:
             self._logger.info(f'No sessions found for user {subject_id} between {start_date} and now')
@@ -47,7 +53,7 @@ class DataDownloader:
 
             self._logger.info(f'Downloading session {s.session_id} for user {subject_id}')
 
-            s_json = self._somnofy.get_session_json(s.session_id, subject_id)
+            s_json = self._somnofy.get_session_json(s.session_id, user.id)
             self.save_raw_session_data(s_json, subject_id, s.session_id)
 
             reports = pd.concat([reports, self._make_session_report(s_json)], ignore_index=True)
@@ -151,11 +157,6 @@ class DataDownloader:
                             f'{dates[0]}_{dates[1]}_epoch_data.csv')
 
     def make_epoch_data_frame_from_session(self,session_json: dict) -> pd.DataFrame:
-        """
-        Make a DataFrame from a session
-        :param session_json: json data for session
-        :return: DataFrame with session data
-        """
         epoch_data = pd.DataFrame(session_json['_embedded']['sleep_analysis']['epoch_data'])
         epoch_hypnogram = pd.DataFrame(session_json['_embedded']['sleep_analysis']['hypnogram'])
 

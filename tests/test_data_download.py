@@ -5,7 +5,7 @@ import unittest
 import datetime
 
 from download.data_download import DataDownloader
-from sf_api.dom import Session
+from sf_api.dom import Session, User
 from sf_api.somnofy import Somnofy, SESSION_DATA_OUTPUTS
 from storage.paths_resolver import PathsResolver
 
@@ -25,7 +25,8 @@ class MockSomnofy(Somnofy):
     # define method get_users
     def get_users(self):
         # return list of dictionaries
-        return [{'id': '1'}, {'id': '2'}, {'id': '3'}]
+        return [{'id': '1', 'last_name': 'user1'}, {'id': '2', 'last_name': 'user2'},
+                {'id': '3', 'last_name': 'user3'}]
 
 
     def get_all_sessions_for_user(self, subject_id, from_date=None, to_date=None):
@@ -36,7 +37,7 @@ class MockSomnofy(Somnofy):
     def get_session_json(self, session_id, subject_id, embeds = SESSION_DATA_OUTPUTS):
         session = self._read_test_session_json()
         session['session_id'] = session_id
-        session['subject_id'] = subject_id;
+        session['user_id'] = subject_id;
         return session
 
 
@@ -54,8 +55,10 @@ class TestDataDownloader(unittest.TestCase):
 
     def test_save_user_data(self):
 
-        subject_id = 'test_user'
-        self.data_downloader.save_user_data(subject_id,start_date = datetime.datetime.now() - datetime.timedelta(days=1))
+        user = User({'id': '1', 'last_name': 'user1', 'created_at': '2023-01-01T00:00:00'})
+        subject_id = self.data_downloader.user_to_subject_id(user)
+
+        self.data_downloader.save_user_data(user, start_date = datetime.datetime.now() - datetime.timedelta(days=1))
 
         s_json = self.mock_somnofy._read_test_session_json()
         session_id = s_json["session_id"]
