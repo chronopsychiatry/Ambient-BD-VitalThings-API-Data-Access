@@ -24,17 +24,17 @@ class DataDownloader:
         self._logger = logging.getLogger(__name__)
         self.filter_shorter_than_hours = 2
 
-    def save_user_data(self, user_id, start_date = None, force_saved_date = True):
+    def save_user_data(self, subject_id, start_date = None, force_saved_date = True):
 
-        start_date = self.calculate_start_date(user_id, start_date, force_saved_date)
-        self._logger.info(f'Downloading data for user {user_id} starting from {start_date}')
-        sessions = self._somnofy.get_all_sessions_for_user(user_id, start_date)
+        start_date = self.calculate_start_date(subject_id, start_date, force_saved_date)
+        self._logger.info(f'Downloading data for user {subject_id} starting from {start_date}')
+        sessions = self._somnofy.get_all_sessions_for_user(subject_id, start_date)
 
         if len(sessions) == 0:
-            self._logger.info(f'No sessions found for user {user_id} between {start_date} and now')
+            self._logger.info(f'No sessions found for user {subject_id} between {start_date} and now')
             return None
 
-        self._logger.info(f'Found {len(sessions)} sessions for user {user_id} between {start_date} and now')
+        self._logger.info(f'Found {len(sessions)} sessions for user {subject_id} between {start_date} and now')
 
         reports = pd.DataFrame()
         epoch_data = pd.DataFrame()
@@ -42,13 +42,13 @@ class DataDownloader:
         last_session_json = None
 
         for s in sessions:
-            if self._is_in_progress(s, user_id):
+            if self._is_in_progress(s, subject_id):
                 continue
 
-            self._logger.info(f'Downloading session {s.session_id} for user {user_id}')
+            self._logger.info(f'Downloading session {s.session_id} for user {subject_id}')
 
-            s_json = self._somnofy.get_session_json(s.session_id, user_id)
-            self.save_raw_session_data(s_json, user_id, s.session_id)
+            s_json = self._somnofy.get_session_json(s.session_id, subject_id)
+            self.save_raw_session_data(s_json, subject_id, s.session_id)
 
             reports = pd.concat([reports, self._make_session_report(s_json)], ignore_index=True)
 
@@ -64,13 +64,13 @@ class DataDownloader:
             return
         dates = self._sessions_to_date_range(sessions[0], last_session)
 
-        self.save_reports(reports, user_id, dates)
-        self.append_to_global_reports(reports, user_id)
-        self.save_epoch_data(epoch_data, user_id, dates)
-        self.save_last_session(last_session_json, user_id)
+        self.save_reports(reports, subject_id, dates)
+        self.append_to_global_reports(reports, subject_id)
+        self.save_epoch_data(epoch_data, subject_id, dates)
+        self.save_last_session(last_session_json, subject_id)
 
         compliance_info = self._compliance_checker.calculate_compliance(reports, dates)
-        self.save_compliance_info(compliance_info, user_id, dates)
+        self.save_compliance_info(compliance_info, subject_id, dates)
 
     def _should_store_epoch_data(self, session):
         return not self.filter_shorter_than_hours or not session.duration_seconds or session.duration_seconds > self.filter_shorter_than_hours * 60 * 60
@@ -80,29 +80,29 @@ class DataDownloader:
         df.insert(0, 'session_id', s_json['session_id'])
         return df
 
-    def _is_in_progress(self, session, user_id):
+    def _is_in_progress(self, session, subject_id):
         if session.state == 'IN_PROGRESS':
-            self._logger.debug(f'Skipping session {session.session_id} for user {user_id} as it is in progress')
+            self._logger.debug(f'Skipping session {session.session_id} for user {subject_id} as it is in progress')
             return True
         return False
 
-    def calculate_start_date(self, user_id, proposed_date = None, force_saved_date = True):
+    def calculate_start_date(self, subject_id, proposed_date = None, force_saved_date = True):
 
         if force_saved_date:
-            start_date = self._get_date_from_last_session(user_id) or proposed_date
+            start_date = self._get_date_from_last_session(subject_id) or proposed_date
         else:
-            start_date = proposed_date or self._get_date_from_last_session(user_id)
+            start_date = proposed_date or self._get_date_from_last_session(subject_id)
 
         if not start_date:
-            raise ValueError(f'No start date found for user {user_id} and none proposed')
+            raise ValueError(f'No start date found for user {subject_id} and none proposed')
 
         return start_date
 
-    def _get_date_from_last_session(self, user_id):
-        if not self._resolver.has_last_session(user_id):
+    def _get_date_from_last_session(self, subject_id):
+        if not self._resolver.has_last_session(subject_id):
             return None
 
-        session_file = self._resolver.get_user_last_session(user_id)
+        session_file = self._resolver.get_user_last_session(subject_id)
         with open(session_file, 'r') as f:
             session = json.load(f)
             end_time = datetime.datetime.fromisoformat(session['end_time'])
@@ -113,28 +113,28 @@ class DataDownloader:
                 end_time = end_time + datetime.timedelta(microseconds=1)
             return end_time
 
-    def save_raw_session_data(self, s_json, user_id, session_id):
+    def save_raw_session_data(self, s_json, subject_id, session_id):
 
-        with open(self._raw_session_file(s_json, user_id, session_id), 'w') as f:
+        with open(self._raw_session_file(s_json, subject_id, session_id), 'w') as f:
             json.dump(s_json, f)
 
-    def _raw_session_file(self, s_json, user_id, session_id):
+    def _raw_session_file(self, s_json, subject_id, session_id):
         start_date = datetime.datetime.fromisoformat(s_json['start_time']).date()
-        return os.path.join(self._resolver.get_user_raw_dir(user_id), f'{start_date}_{session_id}_raw.json')
+        return os.path.join(self._resolver.get_user_raw_dir(subject_id), f'{start_date}_{session_id}_raw.json')
 
-    def save_last_session(self, last_session_json, user_id):
+    def save_last_session(self, last_session_json, subject_id):
         if last_session_json:
             last_session_json['_embedded'] = []
-            path = self._resolver.get_user_last_session(user_id)
+            path = self._resolver.get_user_last_session(subject_id)
             with open(path, 'w') as f:
                 json.dump(last_session_json, f)
 
-    def save_reports(self, reports, user_id, dates):
-        path = self._reports_file(user_id, dates)
+    def save_reports(self, reports, subject_id, dates):
+        path = self._reports_file(subject_id, dates)
         reports.to_csv(path, index=False)
 
-    def _reports_file(self, user_id, dates):
-        return os.path.join(self._resolver.get_user_data_dir(user_id),
+    def _reports_file(self, subject_id, dates):
+        return os.path.join(self._resolver.get_user_data_dir(subject_id),
                             f'{dates[0]}_{dates[1]}_sessions_reports.csv')
 
 
@@ -143,11 +143,11 @@ class DataDownloader:
         end_date = last_session.end_time.date()
         return start_date, end_date
 
-    def save_epoch_data(self, epoch_data, user_id, dates):
-        epoch_data.to_csv(self._epoch_data_file(user_id, dates), index=False)
+    def save_epoch_data(self, epoch_data, subject_id, dates):
+        epoch_data.to_csv(self._epoch_data_file(subject_id, dates), index=False)
 
-    def _epoch_data_file(self, user_id, dates):
-        return os.path.join(self._resolver.get_user_data_dir(user_id),
+    def _epoch_data_file(self, subject_id, dates):
+        return os.path.join(self._resolver.get_user_data_dir(subject_id),
                             f'{dates[0]}_{dates[1]}_epoch_data.csv')
 
     def make_epoch_data_frame_from_session(self,session_json: dict) -> pd.DataFrame:
@@ -173,15 +173,15 @@ class DataDownloader:
         session_data = session_data[['timestamp'] + [col for col in session_data.columns if col != 'timestamp']]
         return session_data
 
-    def append_to_global_reports(self, reports, user_id):
-        file = self._resolver.get_user_global_report(user_id)
+    def append_to_global_reports(self, reports, subject_id):
+        file = self._resolver.get_user_global_report(subject_id)
         reports.to_csv(file, mode='a', header=not os.path.exists(file), index=False)
 
-    def save_compliance_info(self, compliance_info, user_id, dates):
+    def save_compliance_info(self, compliance_info, subject_id, dates):
 
-        path = self._compliance_file(user_id, dates)
+        path = self._compliance_file(subject_id, dates)
         compliance_info.to_csv(path, index=False)
 
-    def _compliance_file(self, user_id, dates):
-        return os.path.join(self._resolver.get_user_data_dir(user_id),
+    def _compliance_file(self, subject_id, dates):
+        return os.path.join(self._resolver.get_user_data_dir(subject_id),
                             f'{dates[0]}_{dates[1]}_compliance_info.csv')

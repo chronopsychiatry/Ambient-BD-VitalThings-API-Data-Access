@@ -28,15 +28,15 @@ class MockSomnofy(Somnofy):
         return [{'id': '1'}, {'id': '2'}, {'id': '3'}]
 
 
-    def get_all_sessions_for_user(self, user_id, from_date=None, to_date=None):
+    def get_all_sessions_for_user(self, subject_id, from_date=None, to_date=None):
         session = Session(self._read_test_session_json())
         # return list of dictionaries
         return [session]
 
-    def get_session_json(self, session_id, user_id, embeds = SESSION_DATA_OUTPUTS):
+    def get_session_json(self, session_id, subject_id, embeds = SESSION_DATA_OUTPUTS):
         session = self._read_test_session_json()
         session['session_id'] = session_id
-        session['user_id'] = user_id;
+        session['subject_id'] = subject_id;
         return session
 
 
@@ -54,8 +54,8 @@ class TestDataDownloader(unittest.TestCase):
 
     def test_save_user_data(self):
 
-        user_id = 'test_user'
-        self.data_downloader.save_user_data(user_id,start_date = datetime.datetime.now() - datetime.timedelta(days=1))
+        subject_id = 'test_user'
+        self.data_downloader.save_user_data(subject_id,start_date = datetime.datetime.now() - datetime.timedelta(days=1))
 
         s_json = self.mock_somnofy._read_test_session_json()
         session_id = s_json["session_id"]
@@ -63,23 +63,23 @@ class TestDataDownloader(unittest.TestCase):
         dates = self.data_downloader._sessions_to_date_range(session, session)
 
         # check if raw data was saved
-        raw_data_file = self.data_downloader._raw_session_file(s_json, user_id, session_id)
+        raw_data_file = self.data_downloader._raw_session_file(s_json, subject_id, session_id)
         self.assertTrue(os.path.isfile(raw_data_file))
 
         # check if epoch data was saved
-        epoch_data_file = self.data_downloader._epoch_data_file(user_id, dates)
+        epoch_data_file = self.data_downloader._epoch_data_file(subject_id, dates)
         self.assertTrue(os.path.isfile(epoch_data_file))
 
         # check if reports were saved
-        reports_file = self.data_downloader._reports_file(user_id, dates)
+        reports_file = self.data_downloader._reports_file(subject_id, dates)
         self.assertTrue(os.path.isfile(reports_file))
 
         # check if last session was saved
-        last_session_file = self.mock_resolver.get_user_last_session(user_id)
+        last_session_file = self.mock_resolver.get_user_last_session(subject_id)
         self.assertTrue(os.path.isfile(last_session_file))
 
         # check if compliance data was saved
-        compliance_file = self.data_downloader._compliance_file(user_id, dates)
+        compliance_file = self.data_downloader._compliance_file(subject_id, dates)
         self.assertTrue(os.path.isfile(compliance_file))
 
 
@@ -99,34 +99,34 @@ class TestDataDownloader(unittest.TestCase):
 
     def test_calculate_start_date_with_proposed_date(self):
         with self.assertRaises(ValueError):
-            self.data_downloader.calculate_start_date(user_id='test_user')
+            self.data_downloader.calculate_start_date(subject_id='test_user')
 
         proposed_date = '2020-01-01'
-        self.assertEqual(self.data_downloader.calculate_start_date(user_id='test_user', proposed_date=proposed_date), proposed_date)
+        self.assertEqual(self.data_downloader.calculate_start_date(subject_id='test_user', proposed_date=proposed_date), proposed_date)
 
     def test_calculate_start_date_with_saved_date(self):
         proposed_date = '2020-01-01'
-        last_session_file = self.mock_resolver.get_user_last_session(user_id='test_user')
+        last_session_file = self.mock_resolver.get_user_last_session(subject_id='test_user')
         last_session = {'start_time': '2023-01-01T00:00:00', 'end_time': '2023-01-01T02:00:00'}
         try:
             with open(last_session_file, 'w') as f:
                 json.dump(last_session, f)
 
             last_session['end_time'] = datetime.datetime.fromisoformat(last_session['end_time'])
-            self.assertEqual(self.data_downloader.calculate_start_date(user_id='test_user', proposed_date=proposed_date, force_saved_date=True), last_session['end_time'])
+            self.assertEqual(self.data_downloader.calculate_start_date(subject_id='test_user', proposed_date=proposed_date, force_saved_date=True), last_session['end_time'])
         finally:
             os.remove(last_session_file)
 
     def test_calculate_start_date_with_session_duration_zero(self):
         proposed_date = '2020-01-01'
-        last_session_file = self.mock_resolver.get_user_last_session(user_id='test_user')
+        last_session_file = self.mock_resolver.get_user_last_session(subject_id='test_user')
         last_session = {'start_time': '2023-01-01T00:00:00', 'end_time': '2023-01-01T00:00:00'}
         try:
             with open(last_session_file, 'w') as f:
                 json.dump(last_session, f)
 
             last_session['end_time'] = datetime.datetime.fromisoformat(last_session['end_time'])
-            start_date = self.data_downloader.calculate_start_date(user_id='test_user', proposed_date=proposed_date, force_saved_date=True)
+            start_date = self.data_downloader.calculate_start_date(subject_id='test_user', proposed_date=proposed_date, force_saved_date=True)
             self.assertGreater(start_date, last_session['end_time'])
             self.assertEqual(start_date.replace(microsecond=0), last_session['end_time'])
         finally:
