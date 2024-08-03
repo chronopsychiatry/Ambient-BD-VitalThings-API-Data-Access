@@ -6,6 +6,9 @@ from requests.auth import HTTPBasicAuth
 # to prevent committing passwords to github users credentials are read from a file outside git
 # and returned as BasicAuth objects.
 
+# Prompt for username and password
+#username = input("Enter username: ")
+#password = getpass.getpass("Enter password: ")
 
 class SimpleFileAuth:
     def __init__(self, file_path='../auth.tsv'):
