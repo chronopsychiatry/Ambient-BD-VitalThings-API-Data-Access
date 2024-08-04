@@ -117,9 +117,10 @@ additionally the  file `all_sessions_report.csv` contains characteristics of all
 
 ### Epoch data
 
-The epoch data contains the following columns:
+Simply saying epoch-dataf file contains the timeseries of the monitored variables for each session  withing the download date range  
+(remember only the sessions of their duration larger than `ignore-epoch-for-shorter-than-hours` are included).
 
-### Data Dictionary
+The epoch data contains the following columns:
 
 | Column Name                  | Description                                                                                                                       |
 |------------------------------|-----------------------------------------------------------------------------------------------------------------------------------|
@@ -144,3 +145,74 @@ The epoch data contains the following columns:
 | `sound_amplitude`            | The sound amplitude during the epoch.                                                                                             |
 | `temperature_ambient`        | The ambient temperature during the epoch.                                                                                         |
 | `time_offset`                | The time offset in seconds from the start of the session.                                                                         |
+
+### Compliance info
+
+The compliance info file contains rows for each nights within the download date range with characteristics that help assess the validity of the sleep data, for example the number of sessions is 0 so the sensor must have been offline.
+
+The compliance info contains the following columns:
+
+| Column Name                | Description                                                                                                            |
+|----------------------------|------------------------------------------------------------------------------------------------------------------------|
+| `night_date`               | The date of the night for which sessions are being assessed. All sessions which session_end in this date are included. |
+| `number_of_long_sessions`  | The number of sessions longer than the minimal duration specified in `ignore-epoch-for-shorter-than-hours`.            |
+| `max_time_in_bed_h`        | The maximum time spent in bed during the night, in hours                                                               |
+| `max_time_asleep_h`        | The maximum time spent asleep during the night, in hours.                                                              |
+| `total_sleep_time_h`       | The total sleep time during the night, in hours. Calculated with time asleep for all not ignored session at this night |
+| `valid`                    | True is the night is valide, which currently means: a) there are recordings for this date, b) the total sleep is >= `flag-short-sleep-for-less-than-hours`   |
+
+### Session report
+
+The session report file contains rows for ALL session within the download date range (they are not filtered with ignore). 
+Apart from household information about the session (id, session_start, session_end), it contains the information about the sleep and activity.   
+
+
+
+| Column Name                          | Description                                                  |
+|--------------------------------------|--------------------------------------------------------------|
+| `session_id`                         | The somnofy unique identifier for the session.               |
+| `epoch_count`                        | The number of 30s epochs in the session.                     |
+| `session_start`                      | The timestamp for start of the session.                      |
+| `relative_session_start`             | @TODO check somnofy                                          |
+| `session_end`                        | The timestamp for end of the session.                        |
+| `time_at_last_epoch`                 | The timestamp  the last epoch of the session.                |
+| `time_at_intended_sleep`             | The time of sleep attempt.                                   |
+| `time_in_undefined`                  | The time spent in undefined (sleep) stage.                   |
+| `time_at_sleep`                      | The fall asleep time.                                        |
+| `time_at_wakeup`                     | The wakeup time.                                             |
+| `sleep_onset`                        | The time it took to fall asleep in seconds.                  |
+| `time_in_bed`                        | The total time spent in bed [s].                             |
+| `time_asleep`                        | The total time scored as asleep in the session [s].          |
+| `sleep_efficiency`                   | The efficiency of sleep.                                     |
+| `time_in_light_sleep`                | The time spent in light sleep [s].                           |
+| `time_in_rem_sleep`                  | The time spent in REM sleep [s].                             |
+| `time_in_deep_sleep`                 | The time spent in deep sleep [s].                            |
+| `time_in_no_presence`                | The time spent with no presence detected [s]                 |
+| `number_of_times_no_presence`        | The number of times no presence was detected.                |
+| `time_wake_after_sleep_onset`        | The time spent awake after sleep onset.                      |
+| `number_of_times_awake`              | The number of times the subject woke up.                     |
+| `number_of_times_awake_long`         | The number of times the subject woke up for a long duration. |
+| `time_wake_pre_post_sleep`           | The time spent awake before and after sleep.                 |
+| `sleep_onset_rem_period`             | The period of REM sleep onset.                               |
+| `sleep_mean_movement`                | The mean movement during sleep.                              |
+| `non_rem_mean_rpm`                   | The mean RPM (respirations per minute) during non-REM sleep. |
+| `non_rem_mean_heartrate`             | The mean heart rate during non-REM sleep.                    |
+| `non_rem_mean_external_heartrate`    | The mean external heart rate during non-REM sleep.           |
+| `epochs_with_movement_pct`           | The percentage of epochs with movement.                      |
+| `sleep_score_1`                      | The sleep score based on the first scoring method.           |
+| `external_spo2_mean`                 | The mean external SpO2 level.                                |
+| `air_pressure_mean`                  | The mean air pressure.                                       |
+| `light_ambient_mean`                 | The mean ambient light level.                                |
+| `sound_amplitude_mean`               | The mean sound amplitude.                                    |
+| `temperature_mean`                   | The mean temperature.                                        |
+| `indoor_air_quality_mean`            | The mean indoor air quality.                                 |
+| `air_humidity_mean`                  | The mean air humidity.                                       |
+| `ems_report_start`                   | The start time of the EMS report.                            |
+| `time_offset_at_intended_sleep`      | The time offset at intended sleep.                           |
+| `time_offset_at_intended_wakeup`     | The time offset at intended wakeup.                          |
+| `time_offset_at_sleep`               | The time offset at sleep.                                    |
+| `time_offset_at_wakeup`              | The time offset at wakeup.                                   |
+
+### All sessions report
+
+Is the same as session_report but contains all the sessions ever downloaded by the program. It can be used for example to find sessions for any day within the study.
