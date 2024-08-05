@@ -77,10 +77,11 @@ class DataDownloader:
         self.save_reports(reports, subject_id, dates)
         self.append_to_global_reports(reports, subject_id)
         self.save_epoch_data(epoch_data, subject_id, dates)
-        self.save_last_session(last_session_json, subject_id)
-
         compliance_info = self._compliance_checker.calculate_compliance(reports, dates)
         self.save_compliance_info(compliance_info, subject_id, dates)
+        self.save_last_session(last_session_json, subject_id)
+
+
 
     def _should_store_epoch_data(self, session: Session):
         return (not self.ignore_epoch_for_shorter_than_hours or

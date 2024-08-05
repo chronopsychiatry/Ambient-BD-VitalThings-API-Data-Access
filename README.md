@@ -43,6 +43,25 @@ cd ambient-somnofy
 python main.py
 ```
 
+## General behaviours
+
+In the typical use, the program is run periodically (by researcher or automatically) to download the data from the Somnofy server. The program remembers the last downloaded session for each subject and continues the download from there. For each run a new set of output files is generated and marked with the date range of the download (last_session date to current date).
+
+It is recommended to run the program in the afternoons so the all "sleep" sessions will be terminated, as the pgoram ignores the "in progress" session.
+
+All raw data are stored in json files as retrieved from Somnofy.
+
+The epoch data are the timeseries of the monitored variables, with time value in the timestamp column. They are called epoch cause their contain aggregated data from the 30s epochs.
+
+As the initial cleaning the short sessions are filtered out from the epoch data. The short sessions are those which are shorter than the specified hours in the `ignore-epoch-for-shorter-than-hours` parameter in the `application.properties` file.
+
+The compliance report is being generated for each night within the download date range. The compliance report contains for example the number of sessions, total sleep time and the flag VALID. The night is considered valid if the total sleep time is greater than the specified hours in the `flag-short-sleep-for-less-than-hours` parameter in the `application.properties` file.
+
+### Monitoring program porgress
+
+The program outputs the current operations or errors to both the console and the log file. 
+The log file is stored in the program directory as `download.log`.
+
 ## Configuration
 
 All the parameters are stored in `application.properties` file. You can change the parameters in this file to customize the download process.
@@ -89,13 +108,57 @@ To help checking the compliance or data capture process, the total hours of slee
 #### Multiple users in auth file
 Auth file can contain multiple users. The program by default connects with the first credentials in the auth file. But using auth-user parameter in the `application.properties` file, you can specify which user to connect with. The user index starts from 0.
 
+#### Subject ID
+
+Somnofy does not contain researech friendly Subject_ID. It was agreed to use Last Name as the subject_id. 
+Actually the program uses the LastName-Somnofy'sUserID as subject id. 
+That is because in some test data there was no LastName set and Somnofy'sUserID can be helpful for sanity checks with the server/dashboard.
+
+For example if the user was Tomasz Zielinski, the subject_id could be `Zielinski-66744b82056bcf001afa8d69`.
+
+To change the subject_id, you need to modify the code in the `download/download_data.py` file in the `get_subject_id` function to return the desired user fields combination.
+
+
 ## Data layout and format
 
-For each subject a folder is created in the download folder. The folder name is the subject ID. Inside the subject folder, there are three subfolders: `data` and `row` and `sys`.
+Example folder structure for 2 subjects (U03, U04 ) and 2 download program runs
+on 2024-07-26 and 2024-08-03. There were no data for subject U03 after 26th July.
+
+```
+- downloaded_data
+    - U03-66744b82056bcf001afa8d69
+        - data
+            - 2024-07-14_2024-07-26_epoch_data.csv
+            - 2024-07-14_2024-07-26_session_report.csv
+            - 2024-07-14_2024-07-26_compliance_info.csv
+        - raw
+            - 2024-07-14_WUVFRRgHDg4RAgAA.json
+            - 2024-07-14_WUVFRRgHDgkCIgAA.json
+            - ...
+        - sys
+            - last_session.json
+    - U04-66826ea1056bcf001afdfca1
+        - data
+            - 2024-07-14_2024-07-26_epoch_data.csv
+            - 2024-07-14_2024-07-26_session_report.csv
+            - 2024-07-14_2024-07-26_compliance_info.csv
+            - 2024-07-27_2024-08-03_epoch_data.csv
+            - 2024-07-27_2024-08-03_session_report.csv
+            - 2024-07-27_2024-08-03_compliance_info.csv
+        - raw
+            - 2024-07-15_WUdIQhgHDxYHIgAA.json
+            - ...
+        - sys
+            - last_session.json
+
+```
+
+
+For each subject a folder is created in the download folder. The folder name is the Subject_ID (as defined above). Inside the subject folder, there are three subfolders: `data` and `raw` and `sys`.
 
 The `sys` folder contains the information used by the program to track the download status. For example it stores the last finished session which has been downloaded. This information is used when download is restarted to continue from the last session.
 
-The `row` folder contains the raw data downloaded from the Somnofy server. The data is stored in the `json` format. Each session is stored in a separate file. The file name is the DATE-SESSION_ID.json. 
+The `raw` folder contains the raw data downloaded from the Somnofy server. The data is stored in the `json` format. Each session is stored in a separate file. The file name is the DATE-SESSION_ID.json. 
 That way the raw data can be sorted by date.
 
 The `data` folder contains the epoch data and sessions report in an *easy* to use form as data tables. The data is stored in the `csv` format. 
