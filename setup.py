@@ -6,6 +6,7 @@ setup(
     packages=find_packages(),
     install_requires=[
         # List your project dependencies here.
+        'pandas>=1.5.3'
         'requests>=2.31.0',
     ],
     entry_points={
