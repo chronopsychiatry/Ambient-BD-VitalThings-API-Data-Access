@@ -6,13 +6,12 @@ setup(
     packages=find_packages(),
     install_requires=[
         # List your project dependencies here.
-        'pandas>=1.5.3'
+        'pandas>=1.5.3',
         'requests>=2.31.0',
     ],
     entry_points={
         'console_scripts': [
-            'ambient_download=main:main',  # 'your_command' is the command you'll use in the CLI.
+            'ambient_download=ambient_bd_downloader:main.main'
         ],
     },
 )
-

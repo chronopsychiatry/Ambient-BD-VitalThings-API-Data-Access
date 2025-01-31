@@ -7,16 +7,16 @@ from requests.auth import HTTPBasicAuth
 # and returned as BasicAuth objects.
 
 # Prompt for username and password
-#username = input("Enter username: ")
-#password = getpass.getpass("Enter password: ")
+# username = input("Enter username: ")
+# password = getpass.getpass("Enter password: ")
+
 
 class SimpleFileAuth:
-    def __init__(self, file_path='../auth.tsv'):
+    def __init__(self, file_path='./auth.tsv'):
         self._logger = logging.getLogger(__name__)
         self.file_path = file_path
         # log the absolute path to the auth file
         self._logger.info(f'Using auth file: {os.path.abspath(file_path)}')
-
 
     def get_auth(self, user_nr=0):
         credentials = self._read_credentials()
@@ -35,6 +35,3 @@ class SimpleFileAuth:
                 user_dict = {'username': username, 'password': password}
                 credentials.append(user_dict)
         return credentials
-
-
-

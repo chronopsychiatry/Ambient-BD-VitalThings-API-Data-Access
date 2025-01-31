@@ -7,8 +7,10 @@ def datetime_from_iso_string(string):
     else:
         return datetime.datetime.fromisoformat(string)
 
+
 def date_from_iso_string(date_string):
     return datetime.datetime.fromisoformat(date_string).date()
+
 
 class Session:
     def __init__(self, session_data):
@@ -49,4 +51,3 @@ class User:
                f"Last Name: {self.last_name}, Display Name: {self.display_name}, " \
                f"Gender: {self.gender}, Birth Year: {self.birth_year}, " \
                f"Created At: {self.created_at}"
-

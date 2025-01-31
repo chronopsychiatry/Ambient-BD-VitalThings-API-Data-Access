@@ -1,6 +1,6 @@
 # AmbientBD Somnofy data download
 
-This a package for downloading sleep data from the radar devices and storing them in a "analysis friendly" formats.
+This a package for downloading sleep data from the radar devices and storing them in an "analysis friendly" format.
 
 ## Installation
 
@@ -47,13 +47,13 @@ python main.py
 
 In the typical use, the program is run periodically (by researcher or automatically) to download the data from the Somnofy server. The program remembers the last downloaded session for each subject and continues the download from there. For each run a new set of output files is generated and marked with the date range of the download (last_session date to current date).
 
-It is recommended to run the program in the afternoons so the all "sleep" sessions will be terminated, as the pgoram ignores the "in progress" session.
+It is recommended to run the program in the afternoon so all the "sleep" sessions will be terminated, as the pgoram ignores the "in progress" sessions.
 
 All raw data are stored in json files as retrieved from Somnofy.
 
-The epoch data are the timeseries of the monitored variables, with time value in the timestamp column. They are called epoch cause their contain aggregated data from the 30s epochs.
+The epoch data are the timeseries of the monitored variables, with time value in the timestamp column. They are called epoch because they contain aggregated data from the 30s epochs.
 
-As the initial cleaning the short sessions are filtered out from the epoch data. The short sessions are those which are shorter than the specified hours in the `ignore-epoch-for-shorter-than-hours` parameter in the `application.properties` file.
+In the initial cleaning, the short sessions are filtered out from the epoch data. The short sessions are those which are shorter than the specified hours in the `ignore-epoch-for-shorter-than-hours` parameter in the `application.properties` file.
 
 The compliance report is being generated for each night within the download date range. The compliance report contains for example the number of sessions, total sleep time and the flag VALID. The night is considered valid if the total sleep time is greater than the specified hours in the `flag-short-sleep-for-less-than-hours` parameter in the `application.properties` file.
 

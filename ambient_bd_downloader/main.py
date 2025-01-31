@@ -1,26 +1,23 @@
-
-# Press Shift+F10 to execute it or replace it with your code.
-# Press Double Shift to search everywhere for classes, files, tool windows, actions, and settings.
-
+import datetime
 import logging
 import configparser
 from typing import Union
 
-from download.data_download import DataDownloader
-from authentication.file_auth import SimpleFileAuth
-from sf_api.somnofy import *
-from storage.paths_resolver import PathsResolver
+from ambient_bd_downloader.download.data_download import DataDownloader
+from ambient_bd_downloader.authentication.file_auth import SimpleFileAuth
+from ambient_bd_downloader.sf_api.somnofy import Somnofy
+from ambient_bd_downloader.storage.paths_resolver import PathsResolver
 
 
 class Properties():
-    def __init__(self, auth_file = None,
+    def __init__(self, auth_file=None,
                  auth_user: Union[str, int] = None,
-                 download_folder = '../downloaded_data',
-                 from_date = None,
+                 download_folder='../downloaded_data',
+                 from_date=None,
                  ignore_epoch_for_shorter_than_hours: Union[str, float] = None,
                  flag_nights_with_sleep_under_hours: Union[str, float] = None):
 
-        self.auth_file = auth_file or '../auth.tsv'
+        self.auth_file = auth_file or './auth.tsv'
         self.auth_user = int(auth_user or 0)
         self.download_folder = download_folder or '../downloaded_data'
 
@@ -40,6 +37,7 @@ class Properties():
                f"ignore_epoch_for_shorter_than_hours={self.ignore_epoch_for_shorter_than_hours}, " \
                f"flag_nights_with_sleep_under_hours={self.flag_nights_with_sleep_under_hours})"
 
+
 def load_application_properties():
     config = configparser.ConfigParser()
     config.read('application.properties')
@@ -51,7 +49,6 @@ def load_application_properties():
         ignore_epoch_for_shorter_than_hours=config['DEFAULT'].get('ignore-epoch-for-shorter-than-hours', None),
         flag_nights_with_sleep_under_hours=config['DEFAULT'].get('flag-nights-with-sleep-under-hours', None)
     )
-
 
 
 def main():
@@ -78,7 +75,6 @@ def main():
 
     somnofy = Somnofy(auth)
 
-
     users = somnofy.get_users()
     for u in users:
         logger.info(f"{u}")
@@ -90,8 +86,6 @@ def main():
 
     for u in users:
         downloader.save_user_data(u, from_date)
-
-
 
 
 if __name__ == '__main__':

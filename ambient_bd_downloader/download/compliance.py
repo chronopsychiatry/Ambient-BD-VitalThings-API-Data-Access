@@ -1,7 +1,6 @@
 import datetime
-
-
 import pandas as pd
+
 
 class ComplianceChecker:
 
@@ -18,14 +17,12 @@ class ComplianceChecker:
             max_time_in_bed_h=('time_in_bed', 'max'),
             max_time_asleep_h=('time_asleep', 'max'),
             total_sleep_time_h=('time_asleep', 'sum')
-
         ).reset_index()
 
         stats['max_time_asleep_h'] = (stats['max_time_asleep_h'] / 3600).round(2)
         stats['max_time_in_bed_h'] = (stats['max_time_in_bed_h'] / 3600).round(2)
         stats['total_sleep_time_h'] = (stats['total_sleep_time_h'] / 3600).round(2)
         stats['valid'] = stats['total_sleep_time_h'] >= self.flag_shorter_than_hours
-
 
         return stats
 
@@ -59,5 +56,3 @@ class ComplianceChecker:
         compliance_info = compliance_info.sort_values('night_date', ascending=True)
 
         return compliance_info
-
-

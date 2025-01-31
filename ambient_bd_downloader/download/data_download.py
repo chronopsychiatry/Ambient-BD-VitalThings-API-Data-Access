@@ -6,17 +6,17 @@ import pandas as pd
 
 import logging
 
-from sf_api.dom import User, Session
+from ambient_bd_downloader.sf_api.dom import User, Session
 from .compliance import ComplianceChecker
-from storage.paths_resolver import PathsResolver
-from sf_api.somnofy import Somnofy
+from ambient_bd_downloader.storage.paths_resolver import PathsResolver
+from ambient_bd_downloader.sf_api.somnofy import Somnofy
 
 
 class DataDownloader:
     def __init__(self, somnofy: Somnofy, resolver: PathsResolver = None,
-                 compliance = ComplianceChecker(),
-                 ignore_epoch_for_shorter_than_hours = 2,
-                 filter_shorter_than_hours = 5):
+                 compliance=ComplianceChecker(),
+                 ignore_epoch_for_shorter_than_hours=2,
+                 filter_shorter_than_hours=5):
         if not somnofy:
             raise ValueError('Somnofy connection must be provided')
         self._somnofy = somnofy
@@ -28,11 +28,10 @@ class DataDownloader:
         self.ignore_epoch_for_shorter_than_hours = ignore_epoch_for_shorter_than_hours
         self._logger = logging.getLogger(__name__)
 
-
     def user_to_subject_id(self, user):
         return user.last_name + '-' + user.id
 
-    def save_user_data(self, user: User, start_date = None, force_saved_date = True):
+    def save_user_data(self, user: User, start_date=None, force_saved_date=True):
 
         subject_id = self.user_to_subject_id(user)
         self._logger.info(f'{subject_id} {user}')
@@ -81,11 +80,10 @@ class DataDownloader:
         self.save_compliance_info(compliance_info, subject_id, dates)
         self.save_last_session(last_session_json, subject_id)
 
-
-
     def _should_store_epoch_data(self, session: Session):
         return (not self.ignore_epoch_for_shorter_than_hours or
-                (session.duration_seconds and session.duration_seconds >= self.ignore_epoch_for_shorter_than_hours * 60 * 60))
+                (session.duration_seconds and
+                 session.duration_seconds >= self.ignore_epoch_for_shorter_than_hours * 60 * 60))
 
     def _make_session_report(self, s_json):
         df = pd.DataFrame(s_json['_embedded']['sleep_analysis']['report'], index=[0])
@@ -98,7 +96,7 @@ class DataDownloader:
             return True
         return False
 
-    def calculate_start_date(self, subject_id, proposed_date = None, force_saved_date = True):
+    def calculate_start_date(self, subject_id, proposed_date=None, force_saved_date=True):
 
         if force_saved_date:
             start_date = self._get_date_from_last_session(subject_id) or proposed_date
@@ -149,7 +147,6 @@ class DataDownloader:
         return os.path.join(self._resolver.get_user_data_dir(subject_id),
                             f'{dates[0]}_{dates[1]}_sessions_reports.csv')
 
-
     def _sessions_to_date_range(self, first_session, last_session):
         start_date = first_session.start_time.date()
         end_date = last_session.end_time.date()
@@ -162,14 +159,15 @@ class DataDownloader:
         return os.path.join(self._resolver.get_user_data_dir(subject_id),
                             f'{dates[0]}_{dates[1]}_epoch_data.csv')
 
-    def make_epoch_data_frame_from_session(self,session_json: dict) -> pd.DataFrame:
+    def make_epoch_data_frame_from_session(self, session_json: dict) -> pd.DataFrame:
         epoch_data = pd.DataFrame(session_json['_embedded']['sleep_analysis']['epoch_data'])
         epoch_hypnogram = pd.DataFrame(session_json['_embedded']['sleep_analysis']['hypnogram'])
 
         # check if both has same number of rows, throw exception when not met with actual numbers
         if len(epoch_data) != len(epoch_hypnogram):
             raise Exception(
-                f"Epoch data and hypnogram data have different number of rows: {len(epoch_data)} vs {len(epoch_hypnogram)}")
+                f"Epoch data and hypnogram data have different number of rows:\
+                    {len(epoch_data)} vs {len(epoch_hypnogram)}")
 
         session_data = pd.concat([epoch_hypnogram, epoch_data], axis=1)
 

@@ -1,10 +1,10 @@
-
 import os
 import logging
 
+
 class PathsResolver:
 
-    def __init__(self, path = os.path.join('..', 'downloaded_data')):
+    def __init__(self, path=os.path.join('..', 'downloaded_data')):
         self._logger = logging.getLogger(__name__)
         self._main_dir = None
         self.set_main_dir(path)
@@ -51,7 +51,5 @@ class PathsResolver:
         last_path = os.path.join(self._main_dir, subject_id, 'sys', 'last_session.json')
         return os.path.exists(last_path)
 
-
     def get_user_global_report(self, subject_id):
         return os.path.join(self.get_user_data_dir(subject_id), 'all_sessions_report.csv')
-
