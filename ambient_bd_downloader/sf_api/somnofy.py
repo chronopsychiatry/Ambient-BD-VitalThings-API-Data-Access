@@ -9,7 +9,6 @@ import webbrowser
 from ambient_bd_downloader.sf_api.dom import Subject, Session
 
 # API
-# https://static.vitalthings.com/somnofy/docs/api/74640730-42fa-486c-996d-6bda9b042a96.html?python#somnofy-partner-api-users (old)
 # https://api.health.somnofy.com/api/v1/docs#/ (new)
 
 
@@ -94,9 +93,15 @@ class Somnofy:
         params = self._make_sessions_params(from_date=from_date, to_date=to_date)
         params['subject_id'] = subject_id
         params['type'] = 'vitalthings-somnofy-sm100-session'  # As of 04/02/2025 this is the only available type
-        r = self.oauth.get(self.sessions_url, params=params)
-        json_list = r.json()['data']
-        sessions = [Session(data) for data in json_list]
+        are_more = True
+        sessions = []
+        while are_more:
+            r = self.oauth.get(self.sessions_url, params=params)
+            json_list = r.json()['data']
+            sessions += [Session(data) for data in json_list]
+            are_more = len(json_list) == self.LIMIT
+            if are_more:
+                params['from'] = datetime.datetime.fromisoformat(json_list[-1]['session_start'])
         return sessions
 
     def get_session_json(self, session_id):
