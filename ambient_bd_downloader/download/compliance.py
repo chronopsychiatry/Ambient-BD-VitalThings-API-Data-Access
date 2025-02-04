@@ -9,11 +9,11 @@ class ComplianceChecker:
 
     def aggregate_session_records(self, records: pd.DataFrame) -> pd.DataFrame:
 
-        records['session_end'] = pd.to_datetime(records['session_end'])
+        records['session_end'] = pd.to_datetime(records['session_end'], format='ISO8601')
         records['night_date'] = records['session_end'].dt.date
 
         stats = records.groupby('night_date').agg(
-            number_of_long_sessions=('session_id', 'count'),
+            number_of_long_sessions=('id', 'count'),
             max_time_in_bed_h=('time_in_bed', 'max'),
             max_time_asleep_h=('time_asleep', 'max'),
             total_sleep_time_h=('time_asleep', 'sum')

@@ -20,36 +20,36 @@ class PathsResolver:
     def get_main_dir(self):
         return self._main_dir
 
-    def get_user_dir(self, subject_id):
-        user_dir = os.path.join(self._main_dir, subject_id)
-        if not os.path.exists(user_dir):
-            os.makedirs(user_dir)
-        return user_dir
+    def get_subject_dir(self, subject_id):
+        subject_dir = os.path.join(self._main_dir, subject_id)
+        if not os.path.exists(subject_dir):
+            os.makedirs(subject_dir)
+        return subject_dir
 
-    def get_user_sys_dir(self, subject_id):
-        sys_dir = os.path.join(self.get_user_dir(subject_id), 'sys')
+    def get_subject_sys_dir(self, subject_id):
+        sys_dir = os.path.join(self.get_subject_dir(subject_id), 'sys')
         if not os.path.exists(sys_dir):
             os.makedirs(sys_dir)
         return sys_dir
 
-    def get_user_data_dir(self, subject_id):
-        data_dir = os.path.join(self.get_user_dir(subject_id), 'data')
+    def get_subject_data_dir(self, subject_id):
+        data_dir = os.path.join(self.get_subject_dir(subject_id), 'data')
         if not os.path.exists(data_dir):
             os.makedirs(data_dir)
         return data_dir
 
-    def get_user_raw_dir(self, subject_id):
-        raw_dir = os.path.join(self.get_user_dir(subject_id), 'raw')
+    def get_subject_raw_dir(self, subject_id):
+        raw_dir = os.path.join(self.get_subject_dir(subject_id), 'raw')
         if not os.path.exists(raw_dir):
             os.makedirs(raw_dir)
         return raw_dir
 
-    def get_user_last_session(self, subject_id):
-        return os.path.join(self.get_user_sys_dir(subject_id), 'last_session.json')
+    def get_subject_last_session(self, subject_id):
+        return os.path.join(self.get_subject_sys_dir(subject_id), 'last_session.json')
 
     def has_last_session(self, subject_id):
         last_path = os.path.join(self._main_dir, subject_id, 'sys', 'last_session.json')
         return os.path.exists(last_path)
 
-    def get_user_global_report(self, subject_id):
-        return os.path.join(self.get_user_data_dir(subject_id), 'all_sessions_report.csv')
+    def get_subject_global_report(self, subject_id):
+        return os.path.join(self.get_subject_data_dir(subject_id), 'all_sessions_report.csv')

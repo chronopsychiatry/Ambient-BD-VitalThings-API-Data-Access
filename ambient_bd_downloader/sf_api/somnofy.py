@@ -1,47 +1,73 @@
 import datetime
-import requests
-from requests.auth import HTTPBasicAuth
+from requests_oauthlib import OAuth2Session
+from os.path import join, exists, dirname
+from os import urandom, remove
+import base64
+import hashlib
+import webbrowser
 
-from ambient_bd_downloader.sf_api.dom import User, Session
+from ambient_bd_downloader.sf_api.dom import Subject, Session
 
 # API
-# https://static.vitalthings.com/somnofy/docs/api/74640730-42fa-486c-996d-6bda9b042a96.html?python#somnofy-partner-api-users
-# https://api.health.somnofy.com/api/v1/openapi.json
-
-OUTPUTS = [
-    'environment',
-    'vitalsigns',
-    'sleep_analysis.report',
-    'sleep_analysis.hypnogram',
-    'sleep_analysis.meta',
-    'sleep_analysis.epoch_data'
-]
-
-SESSION_DATA_OUTPUTS = [OUTPUTS[2], OUTPUTS[3], OUTPUTS[5]]
-SESSION_REPORT_OUTPUT = [OUTPUTS[2]]
+# https://static.vitalthings.com/somnofy/docs/api/74640730-42fa-486c-996d-6bda9b042a96.html?python#somnofy-partner-api-users (old)
+# https://api.health.somnofy.com/api/v1/docs#/ (new)
 
 
 class Somnofy:
-    def __init__(self, auth: HTTPBasicAuth = None, user: str = None, password: str = None):
-        self.auth = auth
-        if (not auth) and user and password:
-            self.auth = HTTPBasicAuth(user, password)
-        if not self.auth:
-            raise ValueError('auth or user and password must be provided')
-        self.users_url = 'https://partner.api.somnofy.com/v1/users'
-        self.sessions_url = 'https://partner.api.somnofy.com/v1/sessions'
+    def __init__(self, properties):
+        self.client_id = properties.client_id
+        if not self.client_id:
+            raise ValueError('Client ID must be provided')
+        self.token_file = join(dirname(properties.client_id_file), 'token.txt')
+        self.subjects_url = 'https://api.health.somnofy.com/api/v1/subjects'
+        self.sessions_url = 'https://api.health.somnofy.com/api/v1/sessions'
+        self.reports_url = 'https://api.health.somnofy.com/api/v1/reports'
         self.date_start = '2023-08-01T00:00:00Z'
         self.date_end = datetime.datetime.now().isoformat()
-        self.LIMIT = 50
+        self.LIMIT = 300
+        self.oauth = self.set_auth(properties.client_id)
 
-    def get_users(self):
-        headers = {'Accept': 'application/json'}
-        r = requests.get(self.users_url, params={}, headers=headers, auth=self.auth)
-        print(r.json())
-        json_list = r.json()["_embedded"]["users"]
-        return [User(user_data) for user_data in json_list]
+    def set_auth(self, client_id: str):
+        if exists(self.token_file):
+            with open(self.token_file, 'r') as f:
+                token = f.read()
+            oauth = OAuth2Session(client_id, token={'access_token': token, 'token_type': 'Bearer'})
+            r = oauth.get(self.subjects_url)  # Test if the token is still valid
+            if r.status_code == 200:
+                return oauth
+            else:
+                remove(self.token_file)
+                print('Token is no longer valid. Please reauthorize.')
 
-    def _make_sessions_params(self, offset=0, limit=None, from_date=None, to_date=None):
+        # Generate a code verifier and code challenge
+        code_verifier = base64.urlsafe_b64encode(urandom(40)).rstrip(b'=').decode('utf-8')
+        code_challenge = base64.urlsafe_b64encode(hashlib.sha256(code_verifier.encode('utf-8'))
+                                                  .digest()).rstrip(b'=').decode('utf-8')
+        # Create an OAuth2 session
+        oauth = OAuth2Session(client_id, redirect_uri='https://api.health.somnofy.com/oauth2-redirect')
+        # Redirect user to Somnofy's authorization URL
+        authorization_url, state = oauth.authorization_url('https://auth.somnofy.com/oauth2/authorize',
+                                                           code_challenge=code_challenge,
+                                                           code_challenge_method='S256')
+        print('Please authorize access in your web browser.')
+        webbrowser.open(authorization_url)
+        # Get the authorization response URL from the user
+        authorization_response = input('Enter the full URL: ')
+        # Fetch the access token
+        token = oauth.fetch_token('https://auth.somnofy.com/oauth2/token',
+                                  authorization_response=authorization_response,
+                                  include_client_id=True,
+                                  code_verifier=code_verifier)
+        with open(self.token_file, 'w') as f:
+            f.write(token['access_token'])
+        return oauth
+
+    def get_subjects(self):
+        r = self.oauth.get(self.subjects_url)
+        json_list = r.json()["data"]
+        return [Subject(subject_data) for subject_data in json_list]
+
+    def _make_sessions_params(self, limit=None, from_date=None, to_date=None):
         if limit is None:
             limit = self.LIMIT
         if from_date is None:
@@ -61,36 +87,25 @@ class Somnofy:
             'limit': limit,
             'from': from_date,
             'to': to_date,
-            'offset': offset,
             'sort': 'asc'
         }
 
-    def get_all_sessions_for_user(self, user_id, from_date=None, to_date=None):
-
-        headers = {'Accept': 'application/json'}
-        offset = 0
-        params = self._make_sessions_params(offset, from_date=from_date, to_date=to_date)
-        are_more = True
-        sessions = []
-        while are_more:
-            params['offset'] = offset
-            params['user_id'] = user_id
-            r = requests.get(self.sessions_url, params=params, headers=headers, auth=self.auth)
-            json_list = r.json()["_embedded"]["sessions"]
-            offset += len(json_list)
-            sessions += [Session(data) for data in json_list]
-            are_more = len(json_list) > 0 and not (sessions[-1].state == 'IN_PROGRESS')
+    def get_all_sessions_for_subject(self, subject_id, from_date=None, to_date=None):
+        params = self._make_sessions_params(from_date=from_date, to_date=to_date)
+        params['subject_id'] = subject_id
+        params['type'] = 'vitalthings-somnofy-sm100-session'  # As of 04/02/2025 this is the only available type
+        r = self.oauth.get(self.sessions_url, params=params)
+        json_list = r.json()['data']
+        sessions = [Session(data) for data in json_list]
         return sessions
 
-    def get_session_json(self, session_id, user_id, embeds=SESSION_DATA_OUTPUTS):
-        headers = {'Accept': 'application/json'}
-        params = {
-            'user_id': user_id,
-            'embed': embeds
-        }
+    def get_session_json(self, session_id):
         url = f'{self.sessions_url}/{session_id}'
-        r = requests.get(url, params=params, headers=headers, auth=self.auth)
+        params = {'include_epoch_data': True}
+        r = self.oauth.get(url, params=params)
         return r.json()
 
-    def get_session_report(self, session_id, user_id):
-        return self.get_session_json(session_id, user_id, embeds=SESSION_REPORT_OUTPUT)
+    def get_session_report(self, subject_id, date):
+        params = {'subjects': subject_id, 'report_date': date}
+        r = self.oauth.get(self.reports_url, params=params)
+        return r.json()

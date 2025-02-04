@@ -2,24 +2,24 @@ import datetime
 import logging
 import configparser
 from typing import Union
+import os
 
 from ambient_bd_downloader.download.data_download import DataDownloader
-from ambient_bd_downloader.authentication.file_auth import SimpleFileAuth
 from ambient_bd_downloader.sf_api.somnofy import Somnofy
 from ambient_bd_downloader.storage.paths_resolver import PathsResolver
 
 
 class Properties():
-    def __init__(self, auth_file=None,
-                 auth_user: Union[str, int] = None,
+    def __init__(self, client_id_file=None,
                  download_folder='../downloaded_data',
                  from_date=None,
                  ignore_epoch_for_shorter_than_hours: Union[str, float] = None,
                  flag_nights_with_sleep_under_hours: Union[str, float] = None):
 
-        self.auth_file = auth_file or './auth.tsv'
-        self.auth_user = int(auth_user or 0)
+        self.client_id_file = client_id_file or './client_id.txt'
         self.download_folder = download_folder or '../downloaded_data'
+        with open(client_id_file, 'r') as f:
+            self.client_id = f.readline()
 
         if from_date is None:
             from_date = datetime.datetime.now() - datetime.timedelta(days=14)
@@ -32,7 +32,7 @@ class Properties():
         self.flag_nights_with_sleep_under_hours = float(flag_nights_with_sleep_under_hours or 5)
 
     def __str__(self):
-        return f"Properties(auth_file={self.auth_file}, auth_user={self.auth_user}, " \
+        return f"Properties(client_id_file={self.client_id_file}, " \
                f"download_folder={self.download_folder}, from_date={self.from_date}, " \
                f"ignore_epoch_for_shorter_than_hours={self.ignore_epoch_for_shorter_than_hours}, " \
                f"flag_nights_with_sleep_under_hours={self.flag_nights_with_sleep_under_hours})"
@@ -40,10 +40,9 @@ class Properties():
 
 def load_application_properties():
     config = configparser.ConfigParser()
-    config.read('application.properties')
+    config.read('../application.properties')
     return Properties(
-        auth_file=config['DEFAULT'].get('auth-file', None),
-        auth_user=config['DEFAULT'].get('auth-user', None),
+        client_id_file=config['DEFAULT'].get('client-id-file', None),
         download_folder=config['DEFAULT'].get('download-dir', None),
         from_date=config['DEFAULT'].get('from-date', None),
         ignore_epoch_for_shorter_than_hours=config['DEFAULT'].get('ignore-epoch-for-shorter-than-hours', None),
@@ -52,31 +51,31 @@ def load_application_properties():
 
 
 def main():
+    properties = load_application_properties()
+
     # Configure the logger
+    if not os.path.exists(properties.download_folder):
+        os.makedirs(properties.download_folder)
     logging.basicConfig(
         level=logging.INFO,  # Set the log level
         format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',  # Log format
         handlers=[
-            logging.FileHandler("download.log"),  # Log to a file
+            logging.FileHandler(os.path.join(properties.download_folder, "download.log")),  # Log to a file
             logging.StreamHandler()  # Log to console
         ]
     )
 
     logger = logging.getLogger('main')
-
-    properties = load_application_properties()
     logger.info(f"Properties: {properties}")
 
-    authentication = SimpleFileAuth(properties.auth_file)
-    auth = authentication.get_auth(properties.auth_user)
     from_date = properties.from_date
 
-    logger.info("Accessing somnofy with user: {}".format(auth.username))
+    logger.info(f"Accessing somnofy with client ID stored at: {properties.client_id_file}")
 
-    somnofy = Somnofy(auth)
+    somnofy = Somnofy(properties)
 
-    users = somnofy.get_users()
-    for u in users:
+    subjects = somnofy.get_subjects()
+    for u in subjects:
         logger.info(f"{u}")
 
     resolver = PathsResolver(properties.download_folder)
@@ -84,8 +83,8 @@ def main():
                                 ignore_epoch_for_shorter_than_hours=properties.ignore_epoch_for_shorter_than_hours,
                                 filter_shorter_than_hours=properties.flag_nights_with_sleep_under_hours)
 
-    for u in users:
-        downloader.save_user_data(u, from_date)
+    for u in subjects:
+        downloader.save_subject_data(u, from_date)
 
 
 if __name__ == '__main__':
