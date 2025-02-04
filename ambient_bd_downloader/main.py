@@ -38,9 +38,12 @@ class Properties():
                f"flag_nights_with_sleep_under_hours={self.flag_nights_with_sleep_under_hours})"
 
 
-def load_application_properties():
+def load_application_properties(file_path='./ambient_bd_downloader.properties'):
     config = configparser.ConfigParser()
-    config.read('../application.properties')
+    if os.path.exists(file_path):
+        config.read(file_path)
+    else:
+        raise ValueError(f"Properties file not found: {file_path}. Run generate_config to create it.")
     return Properties(
         client_id_file=config['DEFAULT'].get('client-id-file', None),
         download_folder=config['DEFAULT'].get('download-dir', None),
@@ -50,8 +53,8 @@ def load_application_properties():
     )
 
 
-def main():
-    properties = load_application_properties()
+def main(properties_path='./ambient_bd_downloader.properties'):
+    properties = load_application_properties(properties_path)
 
     # Configure the logger
     if not os.path.exists(properties.download_folder):
