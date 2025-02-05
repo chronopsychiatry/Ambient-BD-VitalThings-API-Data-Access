@@ -1,5 +1,5 @@
 def generate_config():
-    with open('ambient_bd_downloader.properties', 'w') as f:
+    with open('ambient_downloader.properties', 'w') as f:
         f.write('[DEFAULT]\n')
         f.write('client-id-file=.\\client_id.txt\n')
         f.write('download-dir=.\\downloaded_data\n')
