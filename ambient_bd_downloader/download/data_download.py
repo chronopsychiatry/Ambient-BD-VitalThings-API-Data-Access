@@ -28,17 +28,16 @@ class DataDownloader:
 
     def save_subject_data(self, subject: Subject, start_date=None, force_saved_date=True):
 
-        subject_id = subject.id
         self._logger.info(f'{subject}')
-        start_date = self.calculate_start_date(subject_id, start_date, force_saved_date)
-        self._logger.info(f'Downloading data for subject {subject_id} starting from {start_date}')
+        start_date = self.calculate_start_date(subject.id, start_date, force_saved_date)
+        self._logger.info(f'Downloading data for subject {subject.id} starting from {start_date}')
         sessions = self._somnofy.get_all_sessions_for_subject(subject.id, start_date)
 
         if len(sessions) == 0:
-            self._logger.info(f'No sessions found for subject {subject_id} between {start_date} and now')
+            self._logger.info(f'No sessions found for subject {subject.id} between {start_date} and now')
             return None
 
-        self._logger.info(f'Found {len(sessions)} sessions for subject {subject_id} between {start_date} and now')
+        self._logger.info(f'Found {len(sessions)} sessions for subject {subject.id} between {start_date} and now')
 
         reports = pd.DataFrame()
         epoch_data = pd.DataFrame()
@@ -46,13 +45,13 @@ class DataDownloader:
         last_session_json = None
 
         for s in sessions:
-            if self._is_in_progress(s, subject_id):
+            if self._is_in_progress(s, subject.id):
                 continue
 
-            self._logger.info(f'Downloading session {s.session_id} for subject {subject_id}')
+            self._logger.info(f'Downloading session {s.session_id} for subject {subject.id}')
 
             s_json = self._somnofy.get_session_json(s.session_id)
-            self.save_raw_session_data(s_json, subject_id, s.session_id)
+            self.save_raw_session_data(s_json, subject.id, s.session_id)
 
             reports = pd.concat([reports, self._make_session_report(s_json)], ignore_index=True)
 
@@ -64,16 +63,16 @@ class DataDownloader:
 
         if len(sessions) == 0:
             return
-        if not last_session or not last_session.end_time:
+        if not last_session or not last_session.session_end:
             return
         dates = self._sessions_to_date_range(sessions[0], last_session)
 
-        self.save_reports(reports, subject_id, dates)
-        self.append_to_global_reports(reports, subject_id)
-        self.save_epoch_data(epoch_data, subject_id, dates)
+        self.save_reports(reports, subject.id, dates)
+        self.append_to_global_reports(reports, subject.id)
+        self.save_epoch_data(epoch_data, subject.id, dates)
         compliance_info = self._compliance_checker.calculate_compliance(reports, dates)
-        self.save_compliance_info(compliance_info, subject_id, dates)
-        self.save_last_session(last_session_json, subject_id)
+        self.save_compliance_info(compliance_info, subject.id, dates)
+        self.save_last_session(last_session_json, subject.id)
 
     def _should_store_epoch_data(self, session: Session):
         return (not self.ignore_epoch_for_shorter_than_hours or
@@ -111,13 +110,13 @@ class DataDownloader:
         session_file = self._resolver.get_subject_last_session(subject_id)
         with open(session_file, 'r') as f:
             session = json.load(f)
-            end_time = datetime.datetime.fromisoformat(session['data']['session_end'])
-            start_time = datetime.datetime.fromisoformat(session['data']['session_start'])
+            session_end = datetime.datetime.fromisoformat(session['data']['session_end'])
+            session_start = datetime.datetime.fromisoformat(session['data']['session_start'])
             # some sessions have duration of 0 and are being re-downloaded even if saved as last session
             # we add one microsecond to end time to avoid re-downloading
-            if end_time == start_time:
-                end_time = end_time + datetime.timedelta(microseconds=1)
-            return end_time
+            if session_end == session_start:
+                session_end = session_end + datetime.timedelta(microseconds=1)
+            return session_end
 
     def save_raw_session_data(self, s_json, subject_id, session_id):
 
@@ -143,8 +142,8 @@ class DataDownloader:
                             f'{dates[0]}_{dates[1]}_sessions_reports.csv')
 
     def _sessions_to_date_range(self, first_session, last_session):
-        start_date = first_session.start_time.date()
-        end_date = last_session.end_time.date()
+        start_date = first_session['session_start'].date()
+        end_date = last_session['session_end'].date()
         return start_date, end_date
 
     def save_epoch_data(self, epoch_data, subject_id, dates):
@@ -165,7 +164,8 @@ class DataDownloader:
         #             {len(epoch_data)} vs {len(epoch_hypnogram)}")
 
         # session_data = pd.concat([epoch_hypnogram, epoch_data], axis=1)
-        session_data = epoch_data  # Could not find hypnogram data in new API. Fix this section when VT have given more details.
+        session_data = epoch_data  # Could not find hypnogram data in new API.
+# Fix this section when VT have given more details.
 
         # add session_id as first column
         session_data.insert(0, 'session_id', session_json['data']['id'])

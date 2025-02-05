@@ -19,18 +19,18 @@ class Session:
         self.state = session_data['state']
         self.subject_id = session_data['subject_id']
 
-        self.start_time = datetime_from_iso_string(session_data['session_start'])
+        self.session_start = datetime_from_iso_string(session_data['session_start'])
         if session_data['session_end']:  # end-time not available for in progress sessions
-            self.end_time = datetime_from_iso_string(session_data['session_end'])
+            self.session_end = datetime_from_iso_string(session_data['session_end'])
             # Calculate duration in seconds
-            self.duration_seconds = (self.end_time - self.start_time).total_seconds()
+            self.duration_seconds = (self.session_end - self.session_start).total_seconds()
         else:
-            self.end_time = None
+            self.session_end = None
             self.duration_seconds = None
 
     def __str__(self):
         return f"Session ID: {self.session_id}, Device Serial Number: {self.device_serial_number}, " \
-               f"Start Time: {self.start_time}, End Time: {self.end_time}, " \
+               f"Start Time: {self.session_start}, End Time: {self.session_end}, " \
                f"State: {self.state}, Subject ID: {self.subject_id}, " \
                f"Duration (seconds): {self.duration_seconds}"
 
