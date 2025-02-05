@@ -142,8 +142,8 @@ class DataDownloader:
                             f'{dates[0]}_{dates[1]}_sessions_reports.csv')
 
     def _sessions_to_date_range(self, first_session, last_session):
-        start_date = first_session['session_start'].date()
-        end_date = last_session['session_end'].date()
+        start_date = first_session.session_start.date()
+        end_date = last_session.session_end.date()
         return start_date, end_date
 
     def save_epoch_data(self, epoch_data, subject_id, dates):
