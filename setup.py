@@ -11,6 +11,7 @@ setup(
     install_requires=[
         'pandas>=1.5.3',
         'requests>=2.31.0',
+        'requests-oauthlib>=2.0.0'
     ],
     entry_points={
         'console_scripts': [
