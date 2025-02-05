@@ -38,12 +38,12 @@ class Session:
 class Subject:
     def __init__(self, subject_data):
         self.id = subject_data.get('id')
-        self.name = subject_data.get('name')
+        self.identifier = subject_data.get('identifier')
         self.sex = subject_data.get('sex')
         self.birth_year = subject_data.get('birth_year')
         self.created_at = datetime_from_iso_string(subject_data.get('created_at'))
 
     def __str__(self):
-        return f"Subject ID: {self.id}, Name: {self.name}, " \
+        return f"Subject ID: {self.id}, Identifier: {self.identifier}, " \
                f"Sex: {self.sex}, Birth year: {self.birth_year}," \
                f"Created At: {self.created_at}"
