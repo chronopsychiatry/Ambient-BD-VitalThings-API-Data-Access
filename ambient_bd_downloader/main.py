@@ -38,7 +38,7 @@ class Properties():
                f"flag_nights_with_sleep_under_hours={self.flag_nights_with_sleep_under_hours})"
 
 
-def load_application_properties(file_path='./ambient_bd_downloader.properties'):
+def load_application_properties(file_path='./ambient_downloader.properties'):
     config = configparser.ConfigParser()
     if os.path.exists(file_path):
         config.read(file_path)
@@ -53,8 +53,8 @@ def load_application_properties(file_path='./ambient_bd_downloader.properties'):
     )
 
 
-def main(properties_path='./ambient_bd_downloader.properties'):
-    properties = load_application_properties(properties_path)
+def main():
+    properties = load_application_properties()
 
     # Configure the logger
     if not os.path.exists(properties.download_folder):
