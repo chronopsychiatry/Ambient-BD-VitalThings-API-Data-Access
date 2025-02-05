@@ -23,8 +23,8 @@ class MockSomnofy(Somnofy):
 
     def get_subjects(self):
         # return list of dictionaries
-        return [{'id': '1', 'last_name': 'subject1'}, {'id': '2', 'last_name': 'subject2'},
-                {'id': '3', 'last_name': 'subject3'}]
+        return [{'id': '1', 'identifier': 'subject1'}, {'id': '2', 'identifier': 'subject2'},
+                {'id': '3', 'identifier': 'subject3'}]
 
     def get_all_sessions_for_subject(self, subject_id, from_date=None, to_date=None):
         session = Session(self._read_test_session_json()['data'])
@@ -49,7 +49,8 @@ class TestDataDownloader():
             DataDownloader(somnofy=None, resolver=self.mock_resolver)
 
     def test_save_subject_data(self):
-        subject = Subject({'id': '1', 'last_name': 'subject1', 'created_at': '2023-01-01T00:00:00'})
+        subject = Subject({'id': '1', 'identifier': 'subject1', 'created_at': '2023-01-01T00:00:00'})
+        subject_identity = self.data_downloader.get_subject_identity(subject)
 
         self.data_downloader.save_subject_data(subject, start_date=datetime.datetime.now() - datetime.timedelta(days=1))
 
@@ -59,23 +60,23 @@ class TestDataDownloader():
         dates = self.data_downloader._sessions_to_date_range(session, session)
 
         # check if raw data was saved
-        raw_data_file = self.data_downloader._raw_session_file(s_json, subject.id, session_id)
+        raw_data_file = self.data_downloader._raw_session_file(s_json, subject_identity, session_id)
         assert os.path.isfile(raw_data_file)
 
         # check if epoch data was saved
-        epoch_data_file = self.data_downloader._epoch_data_file(subject.id, dates)
+        epoch_data_file = self.data_downloader._epoch_data_file(subject_identity, dates)
         assert os.path.isfile(epoch_data_file)
 
         # check if reports were saved
-        reports_file = self.data_downloader._reports_file(subject.id, dates)
+        reports_file = self.data_downloader._reports_file(subject_identity, dates)
         assert os.path.isfile(reports_file)
 
         # check if last session was saved
-        last_session_file = self.mock_resolver.get_subject_last_session(subject.id)
+        last_session_file = self.mock_resolver.get_subject_last_session(subject_identity)
         assert os.path.isfile(last_session_file)
 
         # check if compliance data was saved
-        compliance_file = self.data_downloader._compliance_file(subject.id, dates)
+        compliance_file = self.data_downloader._compliance_file(subject_identity, dates)
         assert os.path.isfile(compliance_file)
 
     def test_session_to_date_range(self):
