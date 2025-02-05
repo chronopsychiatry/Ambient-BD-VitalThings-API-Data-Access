@@ -1,13 +1,9 @@
 from setuptools import setup, find_packages
 
-with open("README.md", "r") as f:
-    long_description = f.read()
-
 setup(
     name='ambient_bd_downloader',
     version='0.1',
     description='Download data from Somnofy devices',
-    long_description=long_description,
     long_description_content_type="text/markdown",
     url='https://github.com/chronopsychiatry/Ambient-BD-VitalThings-API-Data-Access',
     packages=find_packages(),
