@@ -4,6 +4,7 @@ __pycache__
 auth.tsv
 *.egg-info
 build
+dist
 
 downloaded_data
 download.log
