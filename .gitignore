@@ -1,4 +1,3 @@
-
 .idea
 __pycache__
 auth.tsv
@@ -9,3 +8,5 @@ dist
 downloaded_data
 download.log
 *.csv
+.vscode
+.pytest_cache

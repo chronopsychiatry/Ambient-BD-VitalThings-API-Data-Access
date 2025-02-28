@@ -24,7 +24,7 @@ class DataDownloader:
         self._compliance_checker = compliance
         self._compliance_checker.flag_shorter_than_hours = filter_shorter_than_hours
         self.ignore_epoch_for_shorter_than_hours = ignore_epoch_for_shorter_than_hours
-        self._logger = logging.getLogger(__name__)
+        self._logger = logging.getLogger('DataDownloader')
 
     def get_subject_identity(self, subject):
         return subject.identifier + '-' + subject.id

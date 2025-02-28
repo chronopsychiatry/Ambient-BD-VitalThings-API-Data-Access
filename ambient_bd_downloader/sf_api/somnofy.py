@@ -5,15 +5,17 @@ from os import urandom, remove
 import base64
 import hashlib
 import webbrowser
+import logging
 
 from ambient_bd_downloader.sf_api.dom import Subject, Session
 
 # API
-# https://api.health.somnofy.com/api/v1/docs#/ (new)
+# https://api.health.somnofy.com/api/v1/docs#/
 
 
 class Somnofy:
     def __init__(self, properties):
+        self._logger = logging.getLogger('Somnofy')
         self.client_id = properties.client_id
         if not self.client_id:
             raise ValueError('Client ID must be provided')
@@ -21,10 +23,13 @@ class Somnofy:
         self.subjects_url = 'https://api.health.somnofy.com/api/v1/subjects'
         self.sessions_url = 'https://api.health.somnofy.com/api/v1/sessions'
         self.reports_url = 'https://api.health.somnofy.com/api/v1/reports'
+        self.zones_url = 'https://api.health.somnofy.com/api/v1/zones'
         self.date_start = '2023-08-01T00:00:00Z'
         self.date_end = datetime.datetime.now().isoformat()
         self.LIMIT = 300
         self.oauth = self.set_auth(properties.client_id)
+        self.zone_name = properties.zone_name
+        self.zone_id = self.get_zone_id()
 
     def set_auth(self, client_id: str):
         if exists(self.token_file):
@@ -33,6 +38,7 @@ class Somnofy:
             oauth = OAuth2Session(client_id, token={'access_token': token, 'token_type': 'Bearer'})
             r = oauth.get(self.subjects_url)  # Test if the token is still valid
             if r.status_code == 200:
+                self._logger.info('Accessing API with stored token.')
                 return oauth
             else:
                 remove(self.token_file)
@@ -62,7 +68,7 @@ class Somnofy:
         return oauth
 
     def get_subjects(self):
-        r = self.oauth.get(self.subjects_url)
+        r = self.oauth.get(self.subjects_url, params={'path': self.zone_id})
         json_list = r.json()["data"]
         return [Subject(subject_data) for subject_data in json_list]
 
@@ -92,7 +98,7 @@ class Somnofy:
     def get_all_sessions_for_subject(self, subject_id, from_date=None, to_date=None):
         params = self._make_sessions_params(from_date=from_date, to_date=to_date)
         params['subject_id'] = subject_id
-        params['type'] = 'vitalthings-somnofy-sm100-session'  # As of 04/02/2025 this is the only available type
+        params['type'] = 'vitalthings-somnofy-sm100-session'
         are_more = True
         sessions = []
         while are_more:
@@ -114,3 +120,17 @@ class Somnofy:
         params = {'subjects': subject_id, 'report_date': date}
         r = self.oauth.get(self.reports_url, params=params)
         return r.json()
+
+    def get_zone_id(self):
+        r = self.oauth.get(self.zones_url)
+        zone_names = []
+        for zone in r.json()['data']:
+            zone_names.append(zone['name'])
+            if zone['name'] == self.zone_name:
+                return zone['id']
+        raise ValueError(f'Zone "{self.zone_name}" not found. Available zones: {zone_names}')
+
+    def has_zone_access(self):
+        zone_id = self.get_zone_id()
+        r = self.oauth.get(self.subjects_url, params={'path': zone_id})
+        return True if r.status_code == 200 else False

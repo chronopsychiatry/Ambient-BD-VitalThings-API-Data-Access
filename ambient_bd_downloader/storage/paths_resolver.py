@@ -5,7 +5,7 @@ import logging
 class PathsResolver:
 
     def __init__(self, path=os.path.join('..', 'downloaded_data')):
-        self._logger = logging.getLogger(__name__)
+        self._logger = logging.getLogger('PathsResolver')
         self._main_dir = None
         self.set_main_dir(path)
 
