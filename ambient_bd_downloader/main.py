@@ -88,7 +88,7 @@ def main():
     for u in subjects:
         logger.info(f"{u}")
 
-    resolver = PathsResolver(properties.download_folder)
+    resolver = PathsResolver(os.path.join(properties.download_folder, properties.zone_name))
     downloader = DataDownloader(somnofy, resolver=resolver,
                                 ignore_epoch_for_shorter_than_hours=properties.ignore_epoch_for_shorter_than_hours,
                                 filter_shorter_than_hours=properties.flag_nights_with_sleep_under_hours)
