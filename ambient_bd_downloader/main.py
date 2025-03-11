@@ -3,6 +3,7 @@ import logging
 import configparser
 from typing import Union
 import os
+import pkg_resources
 
 from ambient_bd_downloader.download.data_download import DataDownloader
 from ambient_bd_downloader.sf_api.somnofy import Somnofy
@@ -73,7 +74,9 @@ def main():
     )
 
     logger = logging.getLogger('main')
-    logger.info(f"Properties: {properties}")
+    version = pkg_resources.require("ambient-bd-downloader")[0].version
+    logger.info(f'Running ambient_bd_downloader version {version}')
+    logger.info(f'Properties: {properties}')
 
     from_date = properties.from_date
 
