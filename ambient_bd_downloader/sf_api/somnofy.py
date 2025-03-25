@@ -14,7 +14,7 @@ from ambient_bd_downloader.sf_api.dom import Subject, Session, Device
 
 
 class Somnofy:
-    def __init__(self, properties):
+    def __init__(self, properties, zone):
         self._logger = logging.getLogger('Somnofy')
         self.client_id = properties.client_id
         if not self.client_id:
@@ -29,7 +29,7 @@ class Somnofy:
         self.date_end = datetime.datetime.now().isoformat()
         self.LIMIT = 300
         self.oauth = self.set_auth(properties.client_id)
-        self.zone_name = properties.zone_name
+        self.zone_name = zone
         self.zone_id = self.get_zone_id()
 
     def set_auth(self, client_id: str):
@@ -69,7 +69,7 @@ class Somnofy:
         return oauth
 
     def get_subjects(self):
-        r = self.oauth.get(self.subjects_url, params={'path': self.zone_id})
+        r = self.oauth.get(self.subjects_url, params={'path': self.zone_id, 'embed': 'devices'})
         json_list = r.json()["data"]
         return [Subject(subject_data) for subject_data in json_list]
 
@@ -77,6 +77,15 @@ class Somnofy:
         r = self.oauth.get(self.devices_url, params={'path': self.zone_id})
         json_list = r.json()["data"]
         return [Device(device_data) for device_data in json_list]
+
+    def select_subjects(self, subject_name, device_name):
+        subjects = self.get_subjects()
+        selected_subjects = []
+        for subject in subjects:
+            if ((subject.identifier in subject_name or '*' in subject_name)
+                    and (subject.device in device_name or '*' in device_name)):
+                selected_subjects.append(subject)
+        return selected_subjects
 
     def _make_sessions_params(self, limit=None, from_date=None, to_date=None):
         if limit is None:

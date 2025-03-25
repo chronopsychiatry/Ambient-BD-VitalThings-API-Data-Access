@@ -30,24 +30,25 @@ def main():
 
     from_date = properties.from_date
 
-    logger.info(f'Accessing somnofy zone "{properties.zone_name}"'
-                f' with client ID stored at: {properties.client_id_file}')
+    for zone in properties.zone_name:
+        logger.info(f'Accessing somnofy zone "{zone}"'
+                    f' with client ID stored at: {properties.client_id_file}')
 
-    somnofy = Somnofy(properties)
+        somnofy = Somnofy(properties, zone=zone)
 
-    if not somnofy.has_zone_access():
-        raise ValueError(f'Access to zone "{properties.zone_name}" denied.')
-    subjects = somnofy.get_subjects()
-    for u in subjects:
-        logger.info(f"{u}")
+        if not somnofy.has_zone_access():
+            raise ValueError(f'Access to zone "{zone}" denied.')
+        subjects = somnofy.select_subjects(subject_name=properties.subject_name, device_name=properties.device_name)
+        for u in subjects:
+            logger.info(f"{u}")
 
-    resolver = PathsResolver(os.path.join(properties.download_folder, properties.zone_name))
-    downloader = DataDownloader(somnofy, resolver=resolver,
-                                ignore_epoch_for_shorter_than_hours=properties.ignore_epoch_for_shorter_than_hours,
-                                filter_shorter_than_hours=properties.flag_nights_with_sleep_under_hours)
+        resolver = PathsResolver(os.path.join(properties.download_folder, zone))
+        downloader = DataDownloader(somnofy, resolver=resolver,
+                                    ignore_epoch_for_shorter_than_hours=properties.ignore_epoch_for_shorter_than_hours,
+                                    filter_shorter_than_hours=properties.flag_nights_with_sleep_under_hours)
 
-    for u in subjects:
-        downloader.save_subject_data(u, from_date)
+        for u in subjects:
+            downloader.save_subject_data(u, from_date)
 
 
 if __name__ == '__main__':
