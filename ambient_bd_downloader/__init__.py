@@ -1,1 +1,1 @@
-name = 'somnofy_dl'
+name = 'ambient_bd_downloader'

@@ -7,7 +7,7 @@ import hashlib
 import webbrowser
 import logging
 
-from ambient_bd_downloader.sf_api.dom import Subject, Session
+from ambient_bd_downloader.sf_api.dom import Subject, Session, Device
 
 # API
 # https://api.health.somnofy.com/api/v1/docs#/
@@ -24,6 +24,7 @@ class Somnofy:
         self.sessions_url = 'https://api.health.somnofy.com/api/v1/sessions'
         self.reports_url = 'https://api.health.somnofy.com/api/v1/reports'
         self.zones_url = 'https://api.health.somnofy.com/api/v1/zones'
+        self.devices_url = 'https://api.health.somnofy.com/api/v1/devices'
         self.date_start = '2023-08-01T00:00:00Z'
         self.date_end = datetime.datetime.now().isoformat()
         self.LIMIT = 300
@@ -71,6 +72,11 @@ class Somnofy:
         r = self.oauth.get(self.subjects_url, params={'path': self.zone_id})
         json_list = r.json()["data"]
         return [Subject(subject_data) for subject_data in json_list]
+
+    def get_devices(self):
+        r = self.oauth.get(self.devices_url, params={'path': self.zone_id})
+        json_list = r.json()["data"]
+        return [Device(device_data) for device_data in json_list]
 
     def _make_sessions_params(self, limit=None, from_date=None, to_date=None):
         if limit is None:
