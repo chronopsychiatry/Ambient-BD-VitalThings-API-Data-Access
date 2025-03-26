@@ -1,6 +1,7 @@
 import pytest
 from unittest.mock import patch, MagicMock, mock_open
 from ambient_bd_downloader.sf_api.somnofy import Somnofy
+from ambient_bd_downloader.sf_api.dom import Subject
 from os.path import join
 
 
@@ -76,3 +77,23 @@ class TestSomnofy:
         mock_open.assert_called_with(join('/path/to', 'token.txt'), 'w')
         mock_open().write.assert_called_with('new_test_token')
         assert oauth is not None
+
+    @patch('ambient_bd_downloader.sf_api.somnofy.Somnofy.set_auth', return_value=MagicMock())
+    @patch('ambient_bd_downloader.sf_api.somnofy.Somnofy.get_zone_id', return_value=1)
+    @patch('ambient_bd_downloader.sf_api.somnofy.Somnofy.get_subjects', return_value=[
+        Subject({'id': '1', 'identifier': 'subject1', 'created_at': '2023-01-01T00:00:00',
+                 'devices': {'data': [{'name': 'VT001'}]}}),
+        Subject({'id': '2', 'identifier': 'subject2', 'created_at': '2023-01-02T00:00:00',
+                 'devices': {'data': [{'name': 'VT002'}]}}),
+        Subject({'id': '3', 'identifier': 'subject3', 'created_at': '2023-01-03T00:00:00',
+                 'devices': {'data': [{'name': 'VT003'}]}})
+    ])
+    def test_select_subjects(self, mock_get_subjects, mock_get_zone_id, mock_set_auth):
+        properties = Properties(client_id='test_client_id',
+                                client_id_file='/path/to/client_id_file',
+                                zone_name='test_zone')
+        somnofy = Somnofy(properties, zone=properties.zone_name)
+        subjects = somnofy.select_subjects(subject_name='subject2', device_name='*')
+
+        assert len(subjects) == 1
+        assert subjects[0].identifier == 'subject2'

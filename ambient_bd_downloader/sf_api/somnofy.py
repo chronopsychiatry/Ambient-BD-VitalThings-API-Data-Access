@@ -73,7 +73,7 @@ class Somnofy:
         json_list = r.json()["data"]
         return [Subject(subject_data) for subject_data in json_list]
 
-    def select_subjects(self, subject_name, device_name):
+    def select_subjects(self, subject_name='*', device_name='*'):
         subjects = self.get_subjects()
         selected_subjects = []
         for subject in subjects:
