@@ -52,26 +52,8 @@ class Subject:
                f"Device: {self.device}"
 
 
-class Device:
-    def __init__(self, device_data):
-        self.id = device_data.get('id')
-        self.name = device_data.get('name')
-        self.subject_id = device_data.get('subject_id')
-        self.zone_id = device_data.get('zone_id')
-        self.type = device_data.get('type')
-        self.latest_connection = datetime_from_iso_string(device_data.get('latest_connectivity_event_at'))
-        self.online = device_data.get('online')
-
-    def __str__(self):
-        return f'Device name: {self.name}, Online: {self.online}, Latest connection: {self.latest_connection}'
-
-
 def get_subject_by_id(subjects, subject_id):
     return next((subject for subject in subjects if subject.id == subject_id))
-
-
-def get_device_by_id(devices, device_id):
-    return next((device for device in devices if device.id == device_id))
 
 
 def get_nested_value(data, keys, default=None):

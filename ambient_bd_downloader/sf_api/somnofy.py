@@ -7,7 +7,7 @@ import hashlib
 import webbrowser
 import logging
 
-from ambient_bd_downloader.sf_api.dom import Subject, Session, Device
+from ambient_bd_downloader.sf_api.dom import Subject, Session
 
 # API
 # https://api.health.somnofy.com/api/v1/docs#/
@@ -72,11 +72,6 @@ class Somnofy:
         r = self.oauth.get(self.subjects_url, params={'path': self.zone_id, 'embed': 'devices'})
         json_list = r.json()["data"]
         return [Subject(subject_data) for subject_data in json_list]
-
-    def get_devices(self):
-        r = self.oauth.get(self.devices_url, params={'path': self.zone_id})
-        json_list = r.json()["data"]
-        return [Device(device_data) for device_data in json_list]
 
     def select_subjects(self, subject_name, device_name):
         subjects = self.get_subjects()
