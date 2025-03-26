@@ -18,7 +18,7 @@ class TestSomnofy:
         properties = Properties(client_id='test_client_id',
                                 client_id_file='/path/to/client_id_file',
                                 zone_name='test_zone')
-        somnofy = Somnofy(properties)
+        somnofy = Somnofy(properties, zone=properties.zone_name)
 
         assert somnofy.client_id == 'test_client_id'
         assert somnofy.zone_name == 'test_zone'
@@ -36,7 +36,7 @@ class TestSomnofy:
     def test_init_no_client_id(self):
         properties = Properties(client_id=None, client_id_file='/path/to/client_id_file', zone_name='test_zone')
         with pytest.raises(ValueError, match='Client ID must be provided'):
-            Somnofy(properties)
+            Somnofy(properties, zone=properties.zone_name)
 
     @patch('ambient_bd_downloader.sf_api.somnofy.exists', return_value=True)
     @patch('ambient_bd_downloader.sf_api.somnofy.open', new_callable=mock_open, read_data='test_token')
@@ -47,7 +47,7 @@ class TestSomnofy:
                                 client_id_file='/path/to/client_id_file',
                                 zone_name='test_zone')
         mock_oauth2session.return_value.get.return_value.status_code = 200
-        somnofy = Somnofy(properties)
+        somnofy = Somnofy(properties, zone=properties.zone_name)
         oauth = somnofy.set_auth('test_client_id')
 
         mock_open.assert_called_with(join('/path/to', 'token.txt'), 'r')
@@ -68,7 +68,7 @@ class TestSomnofy:
         mock_oauth2session.return_value.authorization_url.return_value = ('https://auth.somnofy.com/oauth2/authorize',
                                                                           'test_state')
         mock_oauth2session.return_value.fetch_token.return_value = {'access_token': 'new_test_token'}
-        somnofy = Somnofy(properties)
+        somnofy = Somnofy(properties, zone=properties.zone_name)
         oauth = somnofy.set_auth('test_client_id')
 
         mock_webbrowser.assert_called_with('https://auth.somnofy.com/oauth2/authorize')

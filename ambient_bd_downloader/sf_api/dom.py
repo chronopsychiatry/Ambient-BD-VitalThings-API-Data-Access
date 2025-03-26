@@ -43,7 +43,7 @@ class Subject:
         self.sex = subject_data.get('sex')
         self.birth_year = subject_data.get('birth_year')
         self.created_at = datetime_from_iso_string(subject_data.get('created_at'))
-        self.device = subject_data.get('devices').get('data')[0].get('name')
+        self.device = get_nested_value(subject_data, ['devices', 'data', 0, 'name'])
 
     def __str__(self):
         return f"Subject ID: {self.id}, Identifier: {self.identifier}, " \
@@ -72,3 +72,12 @@ def get_subject_by_id(subjects, subject_id):
 
 def get_device_by_id(devices, device_id):
     return next((device for device in devices if device.id == device_id))
+
+
+def get_nested_value(data, keys, default=None):
+    for key in keys:
+        if isinstance(data, dict):
+            data = data.get(key, default)
+        else:
+            return default
+    return data

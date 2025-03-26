@@ -23,7 +23,8 @@ class MockSomnofy(Somnofy):
 
     def get_subjects(self):
         # return list of dictionaries
-        return [{'id': '1', 'identifier': 'subject1'}, {'id': '2', 'identifier': 'subject2'},
+        return [{'id': '1', 'identifier': 'subject1'},
+                {'id': '2', 'identifier': 'subject2'},
                 {'id': '3', 'identifier': 'subject3'}]
 
     def get_all_sessions_for_subject(self, subject_id, from_date=None, to_date=None):
