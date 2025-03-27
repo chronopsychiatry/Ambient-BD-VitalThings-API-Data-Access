@@ -31,29 +31,40 @@ This will create a file `ambient_downloader.properties` in the current directory
 
 Open the properties file with a text editor to change the parameters (description below).
 
-#### Client ID
-Client ID must be stored in a file with `.txt` format. The file must only contain the client ID.
+#### Files and directories
+##### client-id-file
+Path to the the `.txt` file containing the client ID. The file must only contain the client ID.
 
-The path to the client ID file can be changed in the `ambient_downloader.properties` with the `client-id-file` parameter.
-By default, it is set to `client_id.txt` in the current directory.
+Default value: `./client_id.txt`
 
-#### Download folder
-The download folder can be changed in the `ambient_downloader.properties` with the `download-dir` parameter. 
-By default, it is set to `downloaded_data` in the current directory.
+##### download-dir
+Folder in which the data will be downloaded
 
-#### Data range
+Default value: `./downloaded_data`
 
-The data range can be changed in the `ambient_downloader.properties` with `from-date` parameter in the ISO format `YYYY-MM-DD`.
+#### Data scope
 
-Only sessions starting after that date will be downloaded from the Somnofy server, so it should be set to the study start date.
+##### from-date
+The date from which to download data, in ISO format `YYYY-MM-DD`.
 
-The program remembers the last downloaded session (for each study subject ) and continues download from there. Check below for more details how to force the download of all sessions.
+The program remembers the last downloaded session (for each study subject ) and continues download from there. Check below for more details on how to force the download of all sessions.
 
-#### Filtering and flagging
+##### zone
+The zone name(s) from which to download data. Multiple zones can be provided, separated by commas `,`. `zone=*` will download data from all available zones.
 
-Somnofy creates a new session everytime someone enters the room. These sessions are not useful for the analysis and can be filtered out from the epoch data. The parameter `ignore-epoch-for-shorter-than-hours` can be used to filter out the sessions shorter than the specified hours. These sessions will not be included in the epoch data but still visible in the session reports.
+##### device
+The device id(s) from which to download data. Multiple devices can be provided, separated by commas `,`. `device=*` will download data from all available devices.
 
-To help checking the compliance of the data capture process, the total hours of sleep are calculated for each night. If the total sleep time is less than the specified hours, the session is flagged as INVALID. The parameter `flag-short-sleep-for-less-than-hours` can be used to set the threshold for the short sleep flag.
+##### subject
+The subject identifier(s) from which to download data. Multiple subjects can be provided, separated by commas `,`. `subject=*` will download data from all available subjects.
+
+#### Filtering
+
+##### ignore-epoch-for-shorter-than-hours
+Somnofy creates a new session everytime someone enters the room. These sessions are not useful for the analysis and can be filtered out from the epoch data. This parameter can be used to filter out the sessions shorter than the specified number of hours. These sessions will not be included in the epoch data but still visible in the session reports.
+
+##### flag-short-sleep-for-less-than-hours
+To help checking the compliance of the data capture process, the total hours of sleep are calculated for each night. If the total sleep time is less than the specified hours, the session is flagged as INVALID. This parameter can be used to set the threshold for the short sleep flag.
 
 ### Download data
 
@@ -81,35 +92,36 @@ The program outputs the current operations or errors to both the console and the
 The log file is stored in the download directory as `download.log`.
 
 ## Data layout and format
-Example folder structure for 2 subjects (U03, U04 ) and 2 download program runs
+Example folder structure for 2 subjects (U03, U04) in zone "ABD Test" and 2 download program runs
 on 2024-07-26 and 2024-08-03. There were no data for subject U03 after 26th July.
 
 ```
 - downloaded_data
-    - U03-66744b82056bcf001afa8d69
-        - data
-            - 2024-07-14_2024-07-26_epoch_data.csv
-            - 2024-07-14_2024-07-26_session_report.csv
-            - 2024-07-14_2024-07-26_compliance_info.csv
-        - raw
-            - 2024-07-14_WUVFRRgHDg4RAgAA.json
-            - 2024-07-14_WUVFRRgHDgkCIgAA.json
-            - ...
-        - sys
-            - last_session.json
-    - U04-66826ea1056bcf001afdfca1
-        - data
-            - 2024-07-14_2024-07-26_epoch_data.csv
-            - 2024-07-14_2024-07-26_session_report.csv
-            - 2024-07-14_2024-07-26_compliance_info.csv
-            - 2024-07-27_2024-08-03_epoch_data.csv
-            - 2024-07-27_2024-08-03_session_report.csv
-            - 2024-07-27_2024-08-03_compliance_info.csv
-        - raw
-            - 2024-07-15_WUdIQhgHDxYHIgAA.json
-            - ...
-        - sys
-            - last_session.json
+    - ABD Test
+        - U03-66744b82056bcf001afa8d69
+            - data
+                - 2024-07-14_2024-07-26_epoch_data.csv
+                - 2024-07-14_2024-07-26_session_report.csv
+                - 2024-07-14_2024-07-26_compliance_info.csv
+            - raw
+                - 2024-07-14_WUVFRRgHDg4RAgAA.json
+                - 2024-07-14_WUVFRRgHDgkCIgAA.json
+                - ...
+            - sys
+                - last_session.json
+        - U04-66826ea1056bcf001afdfca1
+            - data
+                - 2024-07-14_2024-07-26_epoch_data.csv
+                - 2024-07-14_2024-07-26_session_report.csv
+                - 2024-07-14_2024-07-26_compliance_info.csv
+                - 2024-07-27_2024-08-03_epoch_data.csv
+                - 2024-07-27_2024-08-03_session_report.csv
+                - 2024-07-27_2024-08-03_compliance_info.csv
+            - raw
+                - 2024-07-15_WUdIQhgHDxYHIgAA.json
+                - ...
+            - sys
+                - last_session.json
 
 ```
 
