@@ -14,7 +14,7 @@ from ambient_bd_downloader.sf_api.dom import Subject, Session
 
 
 class Somnofy:
-    def __init__(self, properties, zone):
+    def __init__(self, properties):
         self._logger = logging.getLogger('Somnofy')
         self.client_id = properties.client_id
         if not self.client_id:
@@ -29,8 +29,6 @@ class Somnofy:
         self.date_end = datetime.datetime.now().isoformat()
         self.LIMIT = 300
         self.oauth = self.set_auth(properties.client_id)
-        self.zone_name = zone
-        self.zone_id = self.get_zone_id()
 
     def set_auth(self, client_id: str):
         if exists(self.token_file):
@@ -68,13 +66,14 @@ class Somnofy:
             f.write(token['access_token'])
         return oauth
 
-    def get_subjects(self):
-        r = self.oauth.get(self.subjects_url, params={'path': self.zone_id, 'embed': 'devices'})
+    def get_subjects(self, zone_name):
+        zone_id = self.get_zone_id(zone_name)
+        r = self.oauth.get(self.subjects_url, params={'path': zone_id, 'embed': 'devices'})
         json_list = r.json()["data"]
         return [Subject(subject_data) for subject_data in json_list]
 
-    def select_subjects(self, subject_name='*', device_name='*'):
-        subjects = self.get_subjects()
+    def select_subjects(self, zone_name, subject_name='*', device_name='*'):
+        subjects = self.get_subjects(zone_name)
         selected_subjects = []
         for subject in subjects:
             if ((subject.identifier in subject_name or '*' in subject_name)
@@ -131,16 +130,18 @@ class Somnofy:
         r = self.oauth.get(self.reports_url, params=params)
         return r.json()
 
-    def get_zone_id(self):
+    def get_zone_id(self, zone_name):
         r = self.oauth.get(self.zones_url)
-        zone_names = []
-        for zone in r.json()['data']:
-            zone_names.append(zone['name'])
-            if zone['name'] == self.zone_name:
-                return zone['id']
-        raise ValueError(f'Zone "{self.zone_name}" not found. Available zones: {zone_names}')
+        available_zones = {zone['name']: zone['id'] for zone in r.json()['data']}
+        if zone_name not in available_zones:
+            raise ValueError(f'Zone "{zone_name}" not found. Available zones: {list(available_zones.keys())}')
+        return available_zones[zone_name]
 
-    def has_zone_access(self):
-        zone_id = self.get_zone_id()
+    def get_all_zones(self):
+        r = self.oauth.get(self.zones_url)
+        return [zone['name'] for zone in r.json()['data']]
+
+    def has_zone_access(self, zone_name):
+        zone_id = self.get_zone_id(zone_name)
         r = self.oauth.get(self.subjects_url, params={'path': zone_id})
         return True if r.status_code == 200 else False

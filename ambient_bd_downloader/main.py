@@ -30,15 +30,21 @@ def main():
 
     from_date = properties.from_date
 
-    for zone in properties.zone_name:
-        logger.info(f'Accessing somnofy zone "{zone}"'
-                    f' with client ID stored at: {properties.client_id_file}')
+    logger.info(f'Accessing somnofy with client ID stored at: {properties.client_id_file}')
+    somnofy = Somnofy(properties)
 
-        somnofy = Somnofy(properties, zone=zone)
+    zones_to_access = somnofy.get_all_zones() if properties.zone_name == ['*'] else properties.zone_name
 
-        if not somnofy.has_zone_access():
-            raise ValueError(f'Access to zone "{zone}" denied.')
-        subjects = somnofy.select_subjects(subject_name=properties.subject_name, device_name=properties.device_name)
+    for zone in zones_to_access:
+        if somnofy.has_zone_access(zone):
+            logger.info(f'Accessing somnofy zone "{zone}"')
+        else:
+            logger.info(f'Access to zone "{zone}" denied.')
+            continue
+
+        subjects = somnofy.select_subjects(zone_name=zone,
+                                           subject_name=properties.subject_name,
+                                           device_name=properties.device_name)
         for u in subjects:
             logger.info(f"{u}")
 

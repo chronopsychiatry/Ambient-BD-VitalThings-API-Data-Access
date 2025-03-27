@@ -1,8 +1,8 @@
 # 0.2.1 (in development)
 
-**New features**
-- Added a new command `ambient_check_devices` which checks the status of all devices in the current zone and shows their status in the logs
-- Added an optional parameter to the config file: `device-check-dir` to set where the device check log is written (defaults to current directory)
+**Improvements**
+- The "zone" field in the config file can now take several values, separated by commas. For example, `zone=ABD Pilot, ABD Work Package 1` will download data for both ABD Pilot and ABD Work Package 1 zones. Alternatively, using `*` will download data from all available zones (for example, `zone=*`)
+- Added "subject" and "device" fields to the config file to download data only for specific subjects and/or devices. As for zones, multiple subjects can be separated by commas, or using a `*` will download all available data (for example, `subject=*`, `device=*`)
 
 # 0.2 (04/09/2023)
 
