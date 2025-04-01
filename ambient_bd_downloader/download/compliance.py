@@ -9,7 +9,7 @@ class ComplianceChecker:
 
     def aggregate_session_records(self, records: pd.DataFrame) -> pd.DataFrame:
 
-        records['session_end'] = pd.to_datetime(records['session_end'], format='ISO8601')
+        records['session_end'] = pd.to_datetime(records['session_end'], format='ISO8601', utc=True)
         records['night_date'] = records['session_end'].dt.date
 
         stats = records.groupby('night_date').agg(

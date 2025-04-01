@@ -69,7 +69,7 @@ class DataDownloader:
             return
         if not last_session or not last_session.session_end:
             return
-        dates = self._sessions_to_date_range(sessions[0], last_session)
+        dates = self._report_to_date_range(reports)
 
         self.save_reports(reports, subject_identity, dates)
         self.append_to_global_reports(reports, subject_identity)
@@ -148,6 +148,11 @@ class DataDownloader:
     def _sessions_to_date_range(self, first_session, last_session):
         start_date = first_session.session_start.date()
         end_date = last_session.session_end.date()
+        return start_date, end_date
+
+    def _report_to_date_range(self, report):
+        start_date = datetime.datetime.fromisoformat(report['session_start'].min()).date()
+        end_date = datetime.datetime.fromisoformat(report['session_end'].max()).date()
         return start_date, end_date
 
     def save_epoch_data(self, epoch_data, subject_id, dates):

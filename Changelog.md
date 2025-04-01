@@ -1,3 +1,8 @@
+# 0.2.2 (in dev)
+
+**Fixes**
+- Fixed date range displaying incorrectly in saved file names (e.g. reports and compliance files)
+
 # 0.2.1 (27/03/2025)
 
 **Improvements**
