@@ -2,7 +2,7 @@ from setuptools import setup, find_packages
 
 setup(
     name='ambient_bd_downloader',
-    version='0.2.1',
+    version='0.2.2',
     description='Download data from Somnofy devices',
     long_description_content_type="text/markdown",
     url='https://github.com/chronopsychiatry/Ambient-BD-VitalThings-API-Data-Access',
@@ -16,8 +16,7 @@ setup(
     entry_points={
         'console_scripts': [
             'ambient_download=ambient_bd_downloader:main.main',
-            'ambient_generate_config=ambient_bd_downloader:generate_config.generate_config',
-            'ambient_check_devices=ambient_bd_downloader:check_devices.check_devices'
+            'ambient_generate_config=ambient_bd_downloader:generate_config.generate_config'
         ],
     },
 )

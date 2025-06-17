@@ -1,7 +1,8 @@
-# 0.2.2 (in dev)
+# 0.2.2 (17/06/2025)
 
 **Fixes**
 - Fixed date range displaying incorrectly in saved file names (e.g. reports and compliance files)
+- Fixed error when device name could not be read from the data
 
 # 0.2.1 (27/03/2025)
 

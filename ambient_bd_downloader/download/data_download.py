@@ -164,17 +164,7 @@ class DataDownloader:
 
     def make_epoch_data_frame_from_session(self, session_json: dict) -> pd.DataFrame:
         epoch_data = pd.DataFrame(session_json['data']['epoch_data'])
-        # epoch_hypnogram = pd.DataFrame(session_json['data']['sleep_analysis']['hypnogram'])
-
-        # check if both has same number of rows, throw exception when not met with actual numbers
-        # if len(epoch_data) != len(epoch_hypnogram):
-        #     raise Exception(
-        #         f"Epoch data and hypnogram data have different number of rows:\
-        #             {len(epoch_data)} vs {len(epoch_hypnogram)}")
-
-        # session_data = pd.concat([epoch_hypnogram, epoch_data], axis=1)
-        session_data = epoch_data  # Could not find hypnogram data in new API.
-# Fix this section when VT have given more details.
+        session_data = epoch_data
 
         # add session_id as first column
         session_data.insert(0, 'session_id', session_json['data']['id'])

@@ -60,7 +60,7 @@ def get_nested_value(data, keys, default=None):
     for key in keys:
         if isinstance(data, dict):
             data = data.get(key, default)
-        elif isinstance(data, list):
+        elif isinstance(data, list) and len(data) > int(key):
             data = data[int(key)]
         else:
             return default
