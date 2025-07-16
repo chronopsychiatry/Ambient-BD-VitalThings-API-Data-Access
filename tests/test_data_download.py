@@ -50,7 +50,11 @@ class TestDataDownloader():
             DataDownloader(somnofy=None, resolver=self.mock_resolver)
 
     def test_save_subject_data(self):
-        subject = Subject({'id': '1', 'identifier': 'subject1', 'created_at': '2023-01-01T00:00:00'})
+        subject = Subject({'id': '1',
+                           'identifier': 'subject1',
+                           'device': 'VTFAKE',
+                           'created_at': '2023-01-01T00:00:00'
+                           })
         subject_identity = self.data_downloader.get_subject_identity(subject)
 
         self.data_downloader.save_subject_data(subject, start_date=datetime.datetime.now() - datetime.timedelta(days=1))
@@ -65,11 +69,11 @@ class TestDataDownloader():
         assert os.path.isfile(raw_data_file)
 
         # check if epoch data was saved
-        epoch_data_file = self.data_downloader._epoch_data_file(subject_identity, dates)
+        epoch_data_file = self.data_downloader._epoch_data_file(subject_identity, subject.device)
         assert os.path.isfile(epoch_data_file)
 
         # check if reports were saved
-        reports_file = self.data_downloader._reports_file(subject_identity, dates)
+        reports_file = self.data_downloader._reports_file(subject_identity, subject.device)
         assert os.path.isfile(reports_file)
 
         # check if last session was saved

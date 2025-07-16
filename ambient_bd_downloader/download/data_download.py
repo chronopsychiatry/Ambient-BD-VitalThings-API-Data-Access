@@ -21,13 +21,14 @@ class DataDownloader:
         if not resolver:
             resolver = PathsResolver()
         self._resolver = resolver
+        self._timestamp = datetime.datetime.now().strftime('%Y-%m-%d')
         self._compliance_checker = compliance
         self._compliance_checker.flag_shorter_than_hours = filter_shorter_than_hours
         self.ignore_epoch_for_shorter_than_hours = ignore_epoch_for_shorter_than_hours
         self._logger = logging.getLogger('DataDownloader')
 
     def get_subject_identity(self, subject):
-        return subject.identifier + '-' + subject.id
+        return subject.identifier
 
     def save_subject_data(self, subject: Subject, start_date=None, force_saved_date=True):
 
@@ -71,9 +72,9 @@ class DataDownloader:
             return
         dates = self._report_to_date_range(reports)
 
-        self.save_reports(reports, subject_identity, dates)
+        self.save_reports(reports, subject_identity, subject.device)
         self.append_to_global_reports(reports, subject_identity)
-        self.save_epoch_data(epoch_data, subject_identity, dates)
+        self.save_epoch_data(epoch_data, subject_identity, subject.device)
         compliance_info = self._compliance_checker.calculate_compliance(reports, dates)
         self.save_compliance_info(compliance_info, subject_identity, dates)
         self.save_last_session(last_session_json, subject_identity)
@@ -137,13 +138,13 @@ class DataDownloader:
             with open(path, 'w') as f:
                 json.dump(last_session_json, f)
 
-    def save_reports(self, reports, subject_id, dates):
-        path = self._reports_file(subject_id, dates)
+    def save_reports(self, reports, subject_id, device_id):
+        path = self._reports_file(subject_id, device_id)
         reports.to_csv(path, index=False)
 
-    def _reports_file(self, subject_id, dates):
+    def _reports_file(self, subject_id, device_id):
         return os.path.join(self._resolver.get_subject_data_dir(subject_id),
-                            f'{dates[0]}_{dates[1]}_sessions_reports.csv')
+                            f'{subject_id}_SOM-{device_id}_Sess_{self._timestamp}.csv')
 
     def _sessions_to_date_range(self, first_session, last_session):
         start_date = first_session.session_start.date()
@@ -155,12 +156,12 @@ class DataDownloader:
         end_date = datetime.datetime.fromisoformat(report['session_end'].max()).date()
         return start_date, end_date
 
-    def save_epoch_data(self, epoch_data, subject_id, dates):
-        epoch_data.to_csv(self._epoch_data_file(subject_id, dates), index=False)
+    def save_epoch_data(self, epoch_data, subject_id, device_id):
+        epoch_data.to_csv(self._epoch_data_file(subject_id, device_id), index=False)
 
-    def _epoch_data_file(self, subject_id, dates):
+    def _epoch_data_file(self, subject_id, device_id):
         return os.path.join(self._resolver.get_subject_data_dir(subject_id),
-                            f'{dates[0]}_{dates[1]}_epoch_data.csv')
+                            f'{subject_id}_SOM-{device_id}_Epoc_{self._timestamp}.csv')
 
     def make_epoch_data_frame_from_session(self, session_json: dict) -> pd.DataFrame:
         epoch_data = pd.DataFrame(session_json['data']['epoch_data'])

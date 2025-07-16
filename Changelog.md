@@ -1,3 +1,7 @@
+# 0.3.0 (in dev)
+
+- Changed Sessions and Epochs filenames to match the Ambient-BD naming convention
+
 # 0.2.2 (17/06/2025)
 
 **Fixes**
