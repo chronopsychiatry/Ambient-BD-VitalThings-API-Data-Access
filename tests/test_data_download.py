@@ -69,11 +69,11 @@ class TestDataDownloader():
         assert os.path.isfile(raw_data_file)
 
         # check if epoch data was saved
-        epoch_data_file = self.data_downloader._epoch_data_file(subject_identity, subject.device)
+        epoch_data_file = self.data_downloader._epoch_data_file(subject_identity)
         assert os.path.isfile(epoch_data_file)
 
         # check if reports were saved
-        reports_file = self.data_downloader._reports_file(subject_identity, subject.device)
+        reports_file = self.data_downloader._reports_file(subject_identity)
         assert os.path.isfile(reports_file)
 
         # check if last session was saved

@@ -72,9 +72,9 @@ class DataDownloader:
             return
         dates = self._report_to_date_range(reports)
 
-        self.save_reports(reports, subject_identity, subject.device)
+        self.save_reports(reports, subject_identity)
         self.append_to_global_reports(reports, subject_identity)
-        self.save_epoch_data(epoch_data, subject_identity, subject.device)
+        self.save_epoch_data(epoch_data, subject_identity)
         compliance_info = self._compliance_checker.calculate_compliance(reports, dates)
         self.save_compliance_info(compliance_info, subject_identity, dates)
         self.save_last_session(last_session_json, subject_identity)
@@ -138,13 +138,13 @@ class DataDownloader:
             with open(path, 'w') as f:
                 json.dump(last_session_json, f)
 
-    def save_reports(self, reports, subject_id, device_id):
-        path = self._reports_file(subject_id, device_id)
+    def save_reports(self, reports, subject_id):
+        path = self._reports_file(subject_id)
         reports.to_csv(path, index=False)
 
-    def _reports_file(self, subject_id, device_id):
+    def _reports_file(self, subject_id):
         return os.path.join(self._resolver.get_subject_data_dir(subject_id),
-                            f'{subject_id}_SOM-{device_id}_Sess_{self._timestamp}.csv')
+                            f'{subject_id}_SOM-Sess_{self._timestamp}.csv')
 
     def _sessions_to_date_range(self, first_session, last_session):
         start_date = first_session.session_start.date()
@@ -156,12 +156,12 @@ class DataDownloader:
         end_date = datetime.datetime.fromisoformat(report['session_end'].max()).date()
         return start_date, end_date
 
-    def save_epoch_data(self, epoch_data, subject_id, device_id):
-        epoch_data.to_csv(self._epoch_data_file(subject_id, device_id), index=False)
+    def save_epoch_data(self, epoch_data, subject_id):
+        epoch_data.to_csv(self._epoch_data_file(subject_id), index=False)
 
-    def _epoch_data_file(self, subject_id, device_id):
+    def _epoch_data_file(self, subject_id):
         return os.path.join(self._resolver.get_subject_data_dir(subject_id),
-                            f'{subject_id}_SOM-{device_id}_Epoc_{self._timestamp}.csv')
+                            f'{subject_id}_SOM-Epoc_{self._timestamp}.csv')
 
     def make_epoch_data_frame_from_session(self, session_json: dict) -> pd.DataFrame:
         epoch_data = pd.DataFrame(session_json['data']['epoch_data'])
