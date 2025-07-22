@@ -7,7 +7,7 @@ setup(
     long_description_content_type="text/markdown",
     url='https://github.com/chronopsychiatry/Ambient-BD-VitalThings-API-Data-Access',
     packages=find_packages(),
-    python_requires='>=3.9',
+    python_requires='>=3.10',
     install_requires=[
         'pandas>=1.5.3',
         'requests>=2.31.0',
