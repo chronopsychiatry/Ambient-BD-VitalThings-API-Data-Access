@@ -1,7 +1,6 @@
 import datetime
 import configparser
-from typing import Union
-import os
+from pathlib import Path
 
 
 class Properties():
@@ -11,15 +10,15 @@ class Properties():
                  subject_name=None,
                  download_folder='../downloaded_data',
                  from_date=None,
-                 ignore_epoch_for_shorter_than_hours: Union[str, float] = None,
-                 flag_nights_with_sleep_under_hours: Union[str, float] = None):
+                 ignore_epoch_for_shorter_than_hours: str | float = None,
+                 flag_nights_with_sleep_under_hours: str | float = None):
 
-        self.client_id_file = client_id_file or './client_id.txt'
+        self.client_id_file = Path(client_id_file or './client_id.txt')
         self.zone_name = zone_name
         self.device_name = device_name or '*'
         self.subject_name = subject_name or '*'
-        self.download_folder = download_folder or '../downloaded_data'
-        with open(client_id_file, 'r') as f:
+        self.download_folder = Path(download_folder or '../downloaded_data')
+        with self.client_id_file.open('r') as f:
             self.client_id = f.readline().strip(' \t\n\r')
 
         if from_date is None:
@@ -42,8 +41,9 @@ class Properties():
 
 
 def load_application_properties(file_path='./ambient_downloader.properties'):
+    file_path = Path(file_path)
     config = configparser.ConfigParser()
-    if os.path.exists(file_path):
+    if file_path.exists():
         config.read(file_path)
     else:
         raise ValueError(f"Properties file not found: {file_path}. Run generate_config to create it.")

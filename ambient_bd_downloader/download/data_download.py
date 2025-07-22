@@ -1,6 +1,5 @@
 import datetime
 import json
-import os
 import pandas as pd
 import logging
 
@@ -113,7 +112,7 @@ class DataDownloader:
             return None
 
         session_file = self._resolver.get_subject_last_session(subject_id)
-        with open(session_file, 'r') as f:
+        with session_file.open('r') as f:
             session = json.load(f)
             session_end = datetime.datetime.fromisoformat(session['data']['session_end'])
             session_start = datetime.datetime.fromisoformat(session['data']['session_start'])
@@ -124,18 +123,17 @@ class DataDownloader:
             return session_end
 
     def save_raw_session_data(self, s_json, subject_id, session_id):
-
-        with open(self._raw_session_file(s_json, subject_id, session_id), 'w') as f:
+        with self._raw_session_file(s_json, subject_id, session_id).open('w') as f:
             json.dump(s_json, f)
 
     def _raw_session_file(self, s_json, subject_id, session_id):
         start_date = datetime.datetime.fromisoformat(s_json['data']['session_start']).date()
-        return os.path.join(self._resolver.get_subject_raw_dir(subject_id), f'{start_date}_{session_id}_raw.json')
+        return self._resolver.get_subject_raw_dir(subject_id) / f'{start_date}_{session_id}_raw.json'
 
     def save_last_session(self, last_session_json, subject_id):
         if last_session_json:
             path = self._resolver.get_subject_last_session(subject_id)
-            with open(path, 'w') as f:
+            with path.open('w') as f:
                 json.dump(last_session_json, f)
 
     def save_reports(self, reports, subject_id):
@@ -143,8 +141,7 @@ class DataDownloader:
         reports.to_csv(path, index=False)
 
     def _reports_file(self, subject_id):
-        return os.path.join(self._resolver.get_subject_data_dir(subject_id),
-                            f'{subject_id}_SOM-Sess_{self._timestamp}.csv')
+        return self._resolver.get_subject_data_dir(subject_id) / f'{subject_id}_SOM-Sess_{self._timestamp}.csv'
 
     def _sessions_to_date_range(self, first_session, last_session):
         start_date = first_session.session_start.date()
@@ -160,8 +157,7 @@ class DataDownloader:
         epoch_data.to_csv(self._epoch_data_file(subject_id), index=False)
 
     def _epoch_data_file(self, subject_id):
-        return os.path.join(self._resolver.get_subject_data_dir(subject_id),
-                            f'{subject_id}_SOM-Epoc_{self._timestamp}.csv')
+        return self._resolver.get_subject_data_dir(subject_id) / f'{subject_id}_SOM-Epoc_{self._timestamp}.csv'
 
     def make_epoch_data_frame_from_session(self, session_json: dict) -> pd.DataFrame:
         epoch_data = pd.DataFrame(session_json['data']['epoch_data'])
@@ -176,13 +172,11 @@ class DataDownloader:
 
     def append_to_global_reports(self, reports, subject_id):
         file = self._resolver.get_subject_global_report(subject_id)
-        reports.to_csv(file, mode='a', header=not os.path.exists(file), index=False)
+        reports.to_csv(file, mode='a', header=not file.exists(), index=False)
 
     def save_compliance_info(self, compliance_info, subject_id, dates):
-
         path = self._compliance_file(subject_id, dates)
         compliance_info.to_csv(path, index=False)
 
     def _compliance_file(self, subject_id, dates):
-        return os.path.join(self._resolver.get_subject_data_dir(subject_id),
-                            f'{dates[0]}_{dates[1]}_compliance_info.csv')
+        return self._resolver.get_subject_data_dir(subject_id) / f'{dates[0]}_{dates[1]}_compliance_info.csv'

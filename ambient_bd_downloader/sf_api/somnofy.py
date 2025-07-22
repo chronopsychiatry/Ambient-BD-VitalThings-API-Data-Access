@@ -1,11 +1,11 @@
 import datetime
 from requests_oauthlib import OAuth2Session
-from os.path import join, exists, dirname
-from os import urandom, remove
+from os import urandom
 import base64
 import hashlib
 import webbrowser
 import logging
+from pathlib import Path
 
 from ambient_bd_downloader.sf_api.dom import Subject, Session
 
@@ -19,7 +19,7 @@ class Somnofy:
         self.client_id = properties.client_id
         if not self.client_id:
             raise ValueError('Client ID must be provided')
-        self.token_file = join(dirname(properties.client_id_file), 'token.txt')
+        self.token_file = Path(properties.client_id_file).parent / 'token.txt'
         self.subjects_url = 'https://api.health.somnofy.com/api/v1/subjects'
         self.sessions_url = 'https://api.health.somnofy.com/api/v1/sessions'
         self.reports_url = 'https://api.health.somnofy.com/api/v1/reports'
@@ -31,8 +31,8 @@ class Somnofy:
         self.oauth = self.set_auth(properties.client_id)
 
     def set_auth(self, client_id: str):
-        if exists(self.token_file):
-            with open(self.token_file, 'r') as f:
+        if self.token_file.exists():
+            with self.token_file.open('r') as f:
                 token = f.read()
             oauth = OAuth2Session(client_id, token={'access_token': token, 'token_type': 'Bearer'})
             r = oauth.get(self.subjects_url)  # Test if the token is still valid
@@ -40,7 +40,7 @@ class Somnofy:
                 self._logger.info('Accessing API with stored token.')
                 return oauth
             else:
-                remove(self.token_file)
+                self.token_file.unlink(missing_ok=True)
                 print('Token is no longer valid. Please reauthorize.')
 
         # Generate a code verifier and code challenge
@@ -62,7 +62,7 @@ class Somnofy:
                                   authorization_response=authorization_response,
                                   include_client_id=True,
                                   code_verifier=code_verifier)
-        with open(self.token_file, 'w') as f:
+        with self.token_file.open('w') as f:
             f.write(token['access_token'])
         return oauth
 

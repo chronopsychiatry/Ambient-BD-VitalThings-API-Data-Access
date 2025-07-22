@@ -1,5 +1,4 @@
 import logging
-import os
 import pkg_resources
 
 from ambient_bd_downloader.download.data_download import DataDownloader
@@ -12,13 +11,13 @@ def main():
     properties = load_application_properties()
 
     # Configure the logger
-    if not os.path.exists(properties.download_folder):
-        os.makedirs(properties.download_folder)
+    if not properties.download_folder.exists():
+        properties.download_folder.mkdir(parents=True)
     logging.basicConfig(
         level=logging.INFO,  # Set the log level
         format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',  # Log format
         handlers=[
-            logging.FileHandler(os.path.join(properties.download_folder, "download.log")),  # Log to a file
+            logging.FileHandler(properties.download_folder / "download.log"),  # Log to a file
             logging.StreamHandler()  # Log to console
         ]
     )
@@ -48,7 +47,7 @@ def main():
         for u in subjects:
             logger.info(f"{u}")
 
-        resolver = PathsResolver(os.path.join(properties.download_folder, zone))
+        resolver = PathsResolver(properties.download_folder / zone)
         downloader = DataDownloader(somnofy, resolver=resolver,
                                     ignore_epoch_for_shorter_than_hours=properties.ignore_epoch_for_shorter_than_hours,
                                     filter_shorter_than_hours=properties.flag_nights_with_sleep_under_hours)
