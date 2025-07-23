@@ -4,12 +4,13 @@ from pathlib import Path
 
 
 class Properties():
-    def __init__(self, client_id_file=None,
-                 zone_name=None,
-                 device_name=None,
-                 subject_name=None,
-                 download_folder='../downloaded_data',
-                 from_date=None,
+    def __init__(self,
+                 client_id_file: str | Path = None,
+                 zone_name: str | list[str] = None,
+                 device_name: str | list[str] = None,
+                 subject_name: str | list[str] = None,
+                 download_folder: str | Path = '../downloaded_data',
+                 from_date: str | datetime.date = None,
                  ignore_epoch_for_shorter_than_hours: str | float = None,
                  flag_nights_with_sleep_under_hours: str | float = None):
 
@@ -40,7 +41,7 @@ class Properties():
                f"flag_nights_with_sleep_under_hours={self.flag_nights_with_sleep_under_hours})"
 
 
-def load_application_properties(file_path='./ambient_downloader.properties'):
+def load_application_properties(file_path: str | Path = './ambient_downloader.properties'):
     file_path = Path(file_path)
     config = configparser.ConfigParser()
     if file_path.exists():

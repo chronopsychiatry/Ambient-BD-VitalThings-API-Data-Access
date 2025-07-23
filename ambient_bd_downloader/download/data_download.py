@@ -2,6 +2,7 @@ import datetime
 import json
 import pandas as pd
 import logging
+from pathlib import Path
 
 from ambient_bd_downloader.sf_api.dom import Subject, Session
 from ambient_bd_downloader.download.compliance import ComplianceChecker
@@ -29,7 +30,7 @@ class DataDownloader:
     def get_subject_identity(self, subject):
         return subject.identifier
 
-    def save_subject_data(self, subject: Subject, start_date=None, force_saved_date=True):
+    def save_subject_data(self, subject: Subject, start_date=None, force_saved_date: bool = True):
 
         subject_identity = self.get_subject_identity(subject)
         self._logger.info(f'{subject}')
@@ -78,24 +79,27 @@ class DataDownloader:
         self.save_compliance_info(compliance_info, subject_identity, dates)
         self.save_last_session(last_session_json, subject_identity)
 
-    def _should_store_epoch_data(self, session: Session):
+    def _should_store_epoch_data(self, session: Session) -> bool:
         return (not self.ignore_epoch_for_shorter_than_hours or
                 (session.duration_seconds and
                  session.duration_seconds >= self.ignore_epoch_for_shorter_than_hours * 60 * 60))
 
-    def _make_session_report(self, s_json):
+    def _make_session_report(self, s_json: dict) -> pd.DataFrame:
         json = s_json['data'].copy()
         json.pop('epoch_data', None)
         df = pd.DataFrame(pd.json_normalize(json))
         return df
 
-    def _is_in_progress(self, session, subject_id):
+    def _is_in_progress(self, session: Session, subject_id: str) -> bool:
         if session.state == 'IN_PROGRESS':
             self._logger.debug(f'Skipping session {session.session_id} for subject {subject_id} as it is in progress')
             return True
         return False
 
-    def calculate_start_date(self, subject_id, proposed_date=None, force_saved_date=True):
+    def calculate_start_date(self,
+                             subject_id: str,
+                             proposed_date: datetime.date = None,
+                             force_saved_date: bool = True) -> datetime.date:
 
         if force_saved_date:
             start_date = self._get_date_from_last_session(subject_id) or proposed_date
@@ -107,7 +111,7 @@ class DataDownloader:
 
         return start_date
 
-    def _get_date_from_last_session(self, subject_id):
+    def _get_date_from_last_session(self, subject_id: str) -> datetime.date | None:
         if not self._resolver.has_last_session(subject_id):
             return None
 
@@ -122,41 +126,41 @@ class DataDownloader:
                 session_end = session_end + datetime.timedelta(microseconds=1)
             return session_end
 
-    def save_raw_session_data(self, s_json, subject_id, session_id):
+    def save_raw_session_data(self, s_json: dict, subject_id: str, session_id: str):
         with self._raw_session_file(s_json, subject_id, session_id).open('w') as f:
             json.dump(s_json, f)
 
-    def _raw_session_file(self, s_json, subject_id, session_id):
+    def _raw_session_file(self, s_json: dict, subject_id: str, session_id: str) -> Path:
         start_date = datetime.datetime.fromisoformat(s_json['data']['session_start']).date()
         return self._resolver.get_subject_raw_dir(subject_id) / f'{start_date}_{session_id}_raw.json'
 
-    def save_last_session(self, last_session_json, subject_id):
+    def save_last_session(self, last_session_json: dict, subject_id: str):
         if last_session_json:
             path = self._resolver.get_subject_last_session(subject_id)
             with path.open('w') as f:
                 json.dump(last_session_json, f)
 
-    def save_reports(self, reports, subject_id):
+    def save_reports(self, reports: pd.DataFrame, subject_id: str):
         path = self._reports_file(subject_id)
         reports.to_csv(path, index=False)
 
-    def _reports_file(self, subject_id):
+    def _reports_file(self, subject_id: str) -> Path:
         return self._resolver.get_subject_data_dir(subject_id) / f'{subject_id}_SOM-Sess_{self._timestamp}.csv'
 
-    def _sessions_to_date_range(self, first_session, last_session):
+    def _sessions_to_date_range(self, first_session: dict, last_session: dict) -> tuple[datetime.date, datetime.date]:
         start_date = first_session.session_start.date()
         end_date = last_session.session_end.date()
         return start_date, end_date
 
-    def _report_to_date_range(self, report):
+    def _report_to_date_range(self, report: pd.DataFrame) -> tuple[datetime.date, datetime.date]:
         start_date = datetime.datetime.fromisoformat(report['session_start'].min()).date()
         end_date = datetime.datetime.fromisoformat(report['session_end'].max()).date()
         return start_date, end_date
 
-    def save_epoch_data(self, epoch_data, subject_id):
+    def save_epoch_data(self, epoch_data: pd.DataFrame, subject_id: str):
         epoch_data.to_csv(self._epoch_data_file(subject_id), index=False)
 
-    def _epoch_data_file(self, subject_id):
+    def _epoch_data_file(self, subject_id: str) -> Path:
         return self._resolver.get_subject_data_dir(subject_id) / f'{subject_id}_SOM-Epoc_{self._timestamp}.csv'
 
     def make_epoch_data_frame_from_session(self, session_json: dict) -> pd.DataFrame:
@@ -170,13 +174,16 @@ class DataDownloader:
         session_data = session_data[['timestamp'] + [col for col in session_data.columns if col != 'timestamp']]
         return session_data
 
-    def append_to_global_reports(self, reports, subject_id):
+    def append_to_global_reports(self, reports: pd.DataFrame, subject_id: str):
         file = self._resolver.get_subject_global_report(subject_id)
         reports.to_csv(file, mode='a', header=not file.exists(), index=False)
 
-    def save_compliance_info(self, compliance_info, subject_id, dates):
+    def save_compliance_info(self,
+                             compliance_info: pd.DataFrame,
+                             subject_id: str,
+                             dates: tuple[datetime.date, datetime.date]):
         path = self._compliance_file(subject_id, dates)
         compliance_info.to_csv(path, index=False)
 
-    def _compliance_file(self, subject_id, dates):
+    def _compliance_file(self, subject_id: str, dates: tuple[datetime.date, datetime.date]) -> Path:
         return self._resolver.get_subject_data_dir(subject_id) / f'{dates[0]}_{dates[1]}_compliance_info.csv'

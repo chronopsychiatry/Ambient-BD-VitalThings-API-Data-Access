@@ -1,7 +1,7 @@
 import datetime
 
 
-def datetime_from_iso_string(string):
+def datetime_from_iso_string(string: str) -> datetime.datetime:
     if string.endswith('Z'):
         dt = datetime.datetime.fromisoformat(string[:-1])
     else:
@@ -9,12 +9,12 @@ def datetime_from_iso_string(string):
     return dt.replace(microsecond=0)
 
 
-def date_from_iso_string(date_string):
+def date_from_iso_string(date_string: str) -> datetime.date:
     return datetime.datetime.fromisoformat(date_string).date()
 
 
 class Session:
-    def __init__(self, session_data):
+    def __init__(self, session_data: dict):
         self.session_id = session_data['id']
         self.device_serial_number = session_data['device_serial_number']
         self.state = session_data['state']
@@ -37,7 +37,7 @@ class Session:
 
 
 class Subject:
-    def __init__(self, subject_data):
+    def __init__(self, subject_data: dict):
         self.id = subject_data.get('id')
         self.identifier = subject_data.get('identifier')
         self.sex = subject_data.get('sex')
@@ -52,11 +52,11 @@ class Subject:
                f"Device: {self.device}"
 
 
-def get_subject_by_id(subjects, subject_id):
-    return next((subject for subject in subjects if subject.id == subject_id))
+def get_subject_by_id(subjects, subject_id: str) -> Subject | None:
+    return next((subject for subject in subjects if subject.id == subject_id), None)
 
 
-def get_nested_value(data, keys, default=None):
+def get_nested_value(data, keys: list[str], default=None):
     for key in keys:
         if isinstance(data, dict):
             data = data.get(key, default)

@@ -4,7 +4,7 @@ import pandas as pd
 
 class ComplianceChecker:
 
-    def __init__(self, flag_shorter_than_hours=5):
+    def __init__(self, flag_shorter_than_hours: float = 5):
         self.flag_shorter_than_hours = flag_shorter_than_hours
 
     def aggregate_session_records(self, records: pd.DataFrame) -> pd.DataFrame:

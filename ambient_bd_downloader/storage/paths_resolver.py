@@ -22,36 +22,36 @@ class PathsResolver:
     def get_main_dir(self):
         return self._main_dir
 
-    def get_subject_dir(self, subject_id):
+    def get_subject_dir(self, subject_id: str) -> Path:
         subject_dir = self._main_dir / subject_id
         if not subject_dir.exists():
             subject_dir.mkdir(parents=True)
         return subject_dir
 
-    def get_subject_sys_dir(self, subject_id):
+    def get_subject_sys_dir(self, subject_id: str) -> Path:
         sys_dir = self.get_subject_dir(subject_id) / 'sys'
         if not sys_dir.exists():
             sys_dir.mkdir(parents=True)
         return sys_dir
 
-    def get_subject_data_dir(self, subject_id):
+    def get_subject_data_dir(self, subject_id: str) -> Path:
         data_dir = self.get_subject_dir(subject_id) / 'data'
         if not data_dir.exists():
             data_dir.mkdir(parents=True)
         return data_dir
 
-    def get_subject_raw_dir(self, subject_id):
+    def get_subject_raw_dir(self, subject_id: str) -> Path:
         raw_dir = self.get_subject_dir(subject_id) / 'raw'
         if not raw_dir.exists():
             raw_dir.mkdir(parents=True)
         return raw_dir
 
-    def get_subject_last_session(self, subject_id):
+    def get_subject_last_session(self, subject_id: str) -> Path:
         return self.get_subject_sys_dir(subject_id) / 'last_session.json'
 
-    def has_last_session(self, subject_id):
+    def has_last_session(self, subject_id: str) -> bool:
         last_path = self.get_subject_sys_dir(subject_id) / 'last_session.json'
         return last_path.exists()
 
-    def get_subject_global_report(self, subject_id):
+    def get_subject_global_report(self, subject_id: str) -> Path:
         return self.get_subject_data_dir(subject_id) / 'all_sessions_report.csv'
